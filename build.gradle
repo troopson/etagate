@@ -1,0 +1,74 @@
+configurations.all {
+	exclude module:'log4j-over-slf4j'
+	
+}
+
+buildscript {
+    repositories {                
+	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/central" }
+	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/snapshots" } 
+    }
+   
+}
+
+apply plugin: 'java'
+
+jar {
+  // by default fat jar
+  archiveName = 'etagate.jar'
+  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+  manifest {
+    attributes 'Main-Class': 'io.vertx.core.Launcher'
+    attributes 'Main-Verticle': 'org.etagate.MainApp'
+  }
+}
+
+
+task copyJars(type:Copy) {
+
+  from configurations.runtime
+  into 'build/runtime' // 目标位置
+
+}
+
+task addDependToManifest << {
+    if (!configurations.runtime.isEmpty()) {
+        jar.manifest.attributes('Class-Path': ". " + configurations.runtime.collect { it.name }.join(' '))
+    }
+}
+jar.dependsOn += addDependToManifest 
+
+jar.dependsOn += copyJars
+
+ext {
+  vertxVersion = "3.4.0"
+}
+
+
+repositories {
+
+	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/central" }
+	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/snapshots" }  
+	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/spring.io" }
+	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/spring.io.milestone" }   
+        //jcenter() 
+
+}
+
+dependencies {
+	 compile "io.vertx:vertx-core:$vertxVersion"
+	 compile "io.vertx:vertx-web:$vertxVersion"
+	 compile "io.vertx:vertx-web-client:$vertxVersion"
+	 compile "io.vertx:vertx-zookeeper:$vertxVersion"
+	 compile "io.vertx:vertx-auth-common:$vertxVersion"
+	 
+	 compile group: 'dom4j', name: 'dom4j', version: '1.6.1'	 
+	 
+	 compile group: 'com.alibaba', name: 'fastjson', version: '1.2.24'
+	 compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.1'
+	 compile group: 'org.yaml', name: 'snakeyaml', version: '1.18'
+ 
+	
+     testCompile 'junit:junit:4.12'
+     testCompile "io.vertx:vertx-unit:$vertxVersion"
+}
