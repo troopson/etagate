@@ -21,6 +21,8 @@ public class AppObject {
 	public long timeout=5000;
 	
 	private Set<String> routePath=null;
+	
+	private NodeStragegy nodeStrategy = new RoundNodeStrategy();
 	private List<Node> node =new ArrayList<>();
 
 	public AppObject(String name){
@@ -55,8 +57,9 @@ public class AppObject {
 	}
 	
 	
+	
 	public Node getNode(){
-		return this.node.get(0);
+		return nodeStrategy.getNode(this.node);
 	}
 	
 	
