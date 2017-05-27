@@ -5,6 +5,9 @@
 *.project
 .settings/
 bin/
+localcode/
+.gradle/
+
 
 # Log file
 *.log
