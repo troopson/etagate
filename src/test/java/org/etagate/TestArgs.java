@@ -13,5 +13,7 @@ public class TestArgs {
 		System.out.println(a.toString());
 		System.out.println(a.get("master"));
 	}
+	
+
 
 }

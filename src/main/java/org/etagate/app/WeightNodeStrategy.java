@@ -6,7 +6,6 @@ package org.etagate.app;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.etagate.app.AppObject.Node;
 
@@ -14,35 +13,34 @@ import org.etagate.app.AppObject.Node;
  * @author 瞿建军       Email: jianjun.qu@istuary.com
  * 2017年5月27日
  */
-public class RoundNodeStrategy implements NodeStragegy {
-
-	private AtomicInteger last=new AtomicInteger(0);
+public class WeightNodeStrategy implements NodeStragegy {
 	
 	private List<Node> node =new ArrayList<>();
 	
-	private int size = 1;
+	private int totalWeight=0;
 	
 	@Override
 	public Node getNode(){
-		if(size==1)
-			return node.get(0);
-		
-		if(last.compareAndSet(size, 0))
-			return node.get(0);
-		else
-			return node.get(last.incrementAndGet());
+		int sum =0 ;
+		int rand=(int)(1+Math.random()*totalWeight);
+		for(Node n : node){
+			sum = sum+n.weight;
+			if(rand<sum)
+				return n;
+		}
+		return node.get(0);
 	}
 
 	@Override
 	public void addNode(Node node) {
 		this.node.add(node);	
-		this.size = this.node.size();
+		this.totalWeight = this.totalWeight+node.weight;
 	}
 
 	@Override
 	public void delNode(Node node) {
 		this.node.remove(node);
-		this.size = this.node.size();
+		this.totalWeight=this.totalWeight-node.weight;
 	}
 
 	@Override

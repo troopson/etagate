@@ -5,5 +5,12 @@ import java.util.List;
 import org.etagate.app.AppObject.Node;
 
 public interface NodeStragegy {
-	public Node getNode(List<Node> node);
+	
+	public void addNode(Node node);
+	
+	public void delNode(Node node);
+		
+	public Node getNode();
+	
+	public List<Node> nodes();
 }

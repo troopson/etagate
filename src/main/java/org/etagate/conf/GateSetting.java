@@ -14,6 +14,7 @@ import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.etagate.app.AppInfo;
 import org.etagate.app.AppObject;
+import org.etagate.app.NodeStragegy;
 import org.etagate.helper.S;
 
 import io.vertx.core.json.JsonObject;
@@ -128,13 +129,17 @@ public class GateSetting {
 		if (S.isBlank(name))
 			return;
 
+		
+		
 		boolean cutname = "true".equalsIgnoreCase(appNode.attributeValue("cutContextPath")) ? true : false;
 		String timeout = appNode.attributeValue("timeout");
 
 		List<Element> nodes = appNode.elements("node");
 		List<Element> include = appNode.elements("include");
 
-		AppObject a = new AppObject(name);
+		NodeStragegy ns = createNodeStrategy(appNode);
+		
+		AppObject a = new AppObject(name,ns);
 		a.setCutAppName(cutname);
 		if (S.isNotBlank(timeout))
 			a.setTimeout(Long.parseLong(timeout));
@@ -143,7 +148,11 @@ public class GateSetting {
 			nodes.forEach(n -> {
 				String host = n.attributeValue("host");
 				String port = n.attributeValue("port");
-				a.addNode(host, Integer.parseInt(port));
+				String weight = n.attributeValue("weight");
+				if(S.isBlank(weight))
+					a.addNode(host, Integer.parseInt(port),1);
+				else
+					a.addNode(host, Integer.parseInt(port), Integer.parseInt(weight));
 			});
 		}
 
@@ -157,6 +166,20 @@ public class GateSetting {
 
 		log.info("add app route " + name);
 
+	}
+
+	private static NodeStragegy createNodeStrategy(Element appNode) {
+		String nodestrategy = appNode.attributeValue("balanceStrategy");
+		NodeStragegy ns =null;
+		if(S.isNotBlank(nodestrategy)){
+			try {
+				ns = (NodeStragegy) Class.forName(nodestrategy).newInstance();
+			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+				log.error("error in attribute: balanceStrategy = "+nodestrategy, e);
+				throw new RuntimeException(e);
+			}
+		}
+		return ns;
 	}
 
 }

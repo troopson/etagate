@@ -3,9 +3,7 @@
  */
 package org.etagate.app;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.etagate.helper.S;
@@ -22,18 +20,26 @@ public class AppObject {
 	
 	private Set<String> routePath=null;
 	
-	private NodeStragegy nodeStrategy = new RoundNodeStrategy();
-	private List<Node> node =new ArrayList<>();
+	private NodeStragegy nodeStrategy  = null;
+
 
 	public AppObject(String name){
-		this.name=name;
+		this(name,null);
 	}
 	
-	public void addNode(String host, int port){
+	public AppObject(String name,NodeStragegy s){
+		this.name=name;
+		if(s==null)
+			this.nodeStrategy = new RoundNodeStrategy();
+		else
+			this.nodeStrategy = s;
+	}
+	
+	public void addNode(String host, int port, int weight){
 		if(S.isBlank(host))
 			return;
 		
-		node.add(new Node(host,port));
+		this.nodeStrategy.addNode(new Node(host,port,weight));
 	}
 	
 	public void addRoutePath(String path){
@@ -59,13 +65,13 @@ public class AppObject {
 	
 	
 	public Node getNode(){
-		return nodeStrategy.getNode(this.node);
+		return nodeStrategy.getNode();
 	}
 	
 	
 
 	public String toString(){
-		return name+"  "+node.toString()+"  cut:"+this.cut_appName+"   timeout:"+this.timeout;
+		return name+"  "+nodeStrategy.nodes()+"  cut:"+this.cut_appName+"   timeout:"+this.timeout;
 	}
 	
 	
@@ -73,10 +79,29 @@ public class AppObject {
 		
 		public final String host;
 		public final int port;
+		public final int weight;
 		
-		public Node(String host, int port){
+		
+		
+		public Node(String host, int port, int weight){
 			this.host=host;
 			this.port=port;
+			this.weight=weight;
 		}
+		
+		@Override
+		public String toString(){
+			return host+":"+port;
+		}
+		
+
+		@Override
+		public boolean equals(Object n){
+			if(n==null || !(n instanceof Node))
+				return false;
+			Node t =(Node)n;
+			return t.host.equals(host)&& t.port == port;
+		}
+		
 	}
 }

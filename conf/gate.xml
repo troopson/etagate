@@ -35,8 +35,8 @@
       <node host="172.21.9.8" port="7777"/>
    </app>      
    <app name="waweb">
-      <node host="172.21.9.15" port="8080"/>
-      <node host="172.21.9.16" port="8080"/>
+      <node host="172.21.9.15" port="8080" weight = "1"/>
+      <node host="172.21.9.16" port="8080" weight = "4"/>
       <include path="/static*"/>
       <include path="/a?login"/>
       <include path="/risk/*"/>
