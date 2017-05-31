@@ -31,7 +31,7 @@ public class GateSetting {
 	public static final String INCLUDE_TAG = "include";
 	public static final String AUTH_TAG = "auth";
 	public static final String EXCLUDE_TAG = "exclude";
-	public static final String PROPERTY_TAG = "exclude";
+	public static final String PROPERTY_TAG = "property";
 
 	public static final Logger log = LoggerFactory.getLogger(GateSetting.class);
 
@@ -63,7 +63,7 @@ public class GateSetting {
 	
 	@SuppressWarnings("unchecked")
 	private static void collectProperty(Element root){
-		List<Element> nodes = root.elements("property");
+		List<Element> nodes = root.elements(PROPERTY_TAG);
 		if(nodes==null)
 			return;
 		nodes.forEach(e->{
@@ -78,7 +78,7 @@ public class GateSetting {
 	
 	@SuppressWarnings("unchecked")
 	private static void parseAuth(Element root){
-		Element auth = root.element("auth");
+		Element auth = root.element(AUTH_TAG);
 		if(auth==null)
 			return;
 		
@@ -87,7 +87,7 @@ public class GateSetting {
 		authSetting.put("authorisation", auth.attributeValue("authorisation"));
 		authSetting.put("successfield", auth.attributeValue("successfield"));
 		
-		List<Element> exclude = auth.elements("exclude");
+		List<Element> exclude = auth.elements(EXCLUDE_TAG);
 		if(exclude==null)
 			return;
 		Set<String> end =new HashSet<>();
@@ -134,8 +134,8 @@ public class GateSetting {
 		boolean cutname = "true".equalsIgnoreCase(appNode.attributeValue("cutContextPath")) ? true : false;
 		String timeout = appNode.attributeValue("timeout");
 
-		List<Element> nodes = appNode.elements("node");
-		List<Element> include = appNode.elements("include");
+		List<Element> nodes = appNode.elements(NODE_TAG);
+		List<Element> include = appNode.elements(INCLUDE_TAG);
 
 		NodeStragegy ns = createNodeStrategy(appNode);
 		
