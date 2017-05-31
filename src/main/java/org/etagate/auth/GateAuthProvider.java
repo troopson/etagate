@@ -50,6 +50,12 @@ public class GateAuthProvider implements AuthProvider {
 
 	}
 	
+	/**
+	 *  身份识别的逻辑： 
+	 *  身份识别的请求，要求返回一个json格式的结果，
+	 *  如果通过了验证，那么json结果中， 要求successField所对应的字段必须存在，并且值不能为false，
+	 *  其他情况，都会视为没有通过验证
+	 */
 
 	@Override
 	public void authenticate(JsonObject authInfo, Handler<AsyncResult<User>> h) {
@@ -69,7 +75,7 @@ public class GateAuthProvider implements AuthProvider {
 				}
 				
 				String result = u.getString(AuthMgr.successFiled);
-				if(S.isNotBlank(result)){  //成功后，返回用户对象
+				if(S.isNotBlank(result) && !"false".equals(result)){  //成功后，返回用户对象
 					GateUser gu = new GateUser(u);
 					gu.setAuthProvider(this);
 					h.handle(Future.succeededFuture(gu));	
@@ -84,7 +90,13 @@ public class GateAuthProvider implements AuthProvider {
 		
 	}
 	
-	
+	/**
+	 * 访问控制的逻辑：
+	 * 当某个用户访问某个资源的时候，如果有权限访问，那么直接返回一个true的字符串，其它结果都会认为是无权访问
+	 * @param user
+	 * @param permission
+	 * @param h
+	 */
 	public void authorise(User user,String permission, Handler<AsyncResult<Boolean>> h){
 		
 		String uri = authMgr.getAuthorisationUrl();
