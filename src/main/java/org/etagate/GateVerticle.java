@@ -2,7 +2,7 @@ package org.etagate;
 
 import org.etagate.app.AppInfo;
 import org.etagate.auth.AuthMgr;
-import org.etagate.auth.AuthRoute;
+import org.etagate.auth.GateAuthHandler;
 import org.etagate.conf.GateSetting;
 import org.etagate.request.AppRoute;
 
@@ -14,9 +14,11 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CookieHandler;
 import io.vertx.ext.web.handler.SessionHandler;
+import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.UserSessionHandler;
 import io.vertx.ext.web.sstore.ClusteredSessionStore;
 import io.vertx.ext.web.sstore.LocalSessionStore;
@@ -37,6 +39,8 @@ public class GateVerticle extends AbstractVerticle {
 
 	private Router router;
 	
+	private WebClient webclient;
+	
 	public void start() throws Exception {
 
 		HttpServerOptions options = new HttpServerOptions();
@@ -54,8 +58,10 @@ public class GateVerticle extends AbstractVerticle {
 
 		AppInfo app = GateSetting.appInfo;
 		
+		this.createWebClient();
+		
 		authMgr = new AuthMgr(GateSetting.authSetting);
-		authMgr.init(getWebClient(), app);
+		authMgr.init(this.webclient,app);
 
 		router = Router.router(this.vertx);
 		
@@ -75,10 +81,17 @@ public class GateVerticle extends AbstractVerticle {
 
 		this.addBasicRoute();
 
-		AuthRoute.addAuthRoute(router, authMgr);
+		GateAuthHandler authHandler = new GateAuthHandler(authMgr);
+		router.route().handler(authHandler::handle);
 
-		AppRoute.addAppRoute(this);
+		AppRoute.addAppRoute(GateSetting.appInfo,webclient,router);
 
+		//如果配置了静态文件目录，那么在没有命中前面的route path时，可以直接映射到静态文件目录中去
+		if(webroot!=null){
+			StaticHandler sta = StaticHandler.create(webroot);
+			router.route().handler(sta);
+		}
+		
 		server.requestHandler(router::accept);
 
 	}
@@ -107,22 +120,16 @@ public class GateVerticle extends AbstractVerticle {
 
 	// =================================================
 
-	public AppInfo getApp() {
-		return GateSetting.appInfo;
+	private void createWebClient(){
+		WebClientOptions op = new WebClientOptions();
+		op.setKeepAlive(true);
+		op.setConnectTimeout(3000);
+		op.setSsl(false);
+		op.setLogActivity(true);
+		this.webclient = WebClient.create(vertx,op);
 	}
 
-	public WebClient getWebClient() {
-		return WebClient.create(vertx);
-	}
-
-	public String getWebroot() {
-		return webroot;
-	}
-
-	public Router getRouter() {
-		return router;
-	}
-
+	
 	public AuthMgr getAuthMgr() {
 		return authMgr;
 	}

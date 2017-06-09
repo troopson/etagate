@@ -79,8 +79,8 @@ public class GateAuthHandler extends AuthHandlerImpl {
 	
 	@Override
 	protected void authorise(User user, RoutingContext context) {
-		System.out.println("authorise =>"+user.principal().toString());
-		user.isAuthorised(context.request().uri(),  res -> {
+//		System.out.println("authorise =>"+user.principal().toString());
+		((GateUser)user).isAuthorised(authMgr.getAuthProvider(),context.request().uri(),  res -> {
 	        if (res.succeeded()) {
 	           if (res.result()) {
 	              context.next();

@@ -3,7 +3,6 @@
  */
 package org.etagate.auth;
 
-import org.etagate.app.AppObject;
 import org.etagate.helper.S;
 
 import io.vertx.core.AsyncResult;
@@ -13,42 +12,22 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.AuthProvider;
 import io.vertx.ext.auth.User;
-import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
-import io.vertx.ext.web.client.WebClient;
 
 /**
  * @author 瞿建军       Email: jianjun.qu@istuary.com
  * 2017年2月23日
  */
 public class GateAuthProvider implements AuthProvider {
-	
-	private WebClient client = null;
-			
+				
 	private AuthMgr authMgr;	
 	
-	public void setWebClient(WebClient client) {
-		this.client = client;
-	}
-
-
-	public void setAuthMgr(AuthMgr authMgr) {
+	public GateAuthProvider(AuthMgr authMgr) {
 		this.authMgr = authMgr;
 	}
 
 	
-	public void getJsonResult(AppObject appObj, String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
-		AppObject.Node node = appObj.getNode();
-		HttpRequest<Buffer> req = this.client.get(node.port, node.host, uri);
-		param.forEach(entry -> {
-			req.addQueryParam(entry.getKey(), "" + entry.getValue());
-		});
-
-		req.timeout(5000).send(ar -> {
-			h.handle(ar);			
-		});
-
-	}
+	
 	
 	/**
 	 *  身份识别的逻辑： 
@@ -62,7 +41,7 @@ public class GateAuthProvider implements AuthProvider {
 		
 		String uri = authMgr.getAuthenticationUrl();
 		
-		this.getJsonResult(authMgr.getAuthAppObj(), uri, authInfo, ar->{
+		authMgr.getJsonResult(uri, authInfo, ar->{
 			if(ar.succeeded()){
 				//如果用户校验后，需要返回一个json串，其中包括用户名密码校验的结果，
 				// 网关会把结果返给前端页面，由页面处理最终跳转
@@ -104,7 +83,7 @@ public class GateAuthProvider implements AuthProvider {
 		JsonObject pricipal = user.principal().copy();
 		pricipal.put("permission", permission);
 //		System.out.println("authorise uri: "+uri);
-		this.getJsonResult(authMgr.getAuthAppObj(), uri, pricipal, res->{
+		authMgr.getJsonResult(uri, pricipal, res->{
 			if(res.succeeded()){
 				HttpResponse<Buffer> appResponse = res.result();
 				

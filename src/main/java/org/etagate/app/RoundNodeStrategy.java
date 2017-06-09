@@ -27,10 +27,13 @@ public class RoundNodeStrategy implements NodeStragegy {
 		if(size==1)
 			return node.get(0);
 		
-		if(last.compareAndSet(size, 0))
+		int idx = last.getAndIncrement();
+		
+		if(idx>=size){
+			last.set(1);
 			return node.get(0);
-		else
-			return node.get(last.incrementAndGet());
+		}else
+			return node.get(idx);
 	}
 
 	@Override

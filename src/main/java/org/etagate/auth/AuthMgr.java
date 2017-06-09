@@ -10,7 +10,12 @@ import org.etagate.app.AppInfo;
 import org.etagate.app.AppObject;
 import org.etagate.helper.S;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.client.HttpRequest;
+import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 
 /**
@@ -33,6 +38,8 @@ public class AuthMgr {
 	private String not_auth_sufix=null;
 		
 	private GateAuthProvider authProvider;
+	
+	private WebClient webclient;
 	
 	
 	/*
@@ -82,14 +89,27 @@ public class AuthMgr {
 	
 	public void init(WebClient client,AppInfo app) {
 
+		this.webclient= client;
 		this.authAppObj = app.getAppInfo(authApp);
 		
-		this.authProvider = new GateAuthProvider();
-		this.authProvider.setWebClient(client);
-		this.authProvider.setAuthMgr(this);
+		this.authProvider = new GateAuthProvider(this);
 
 	}
 
+	
+	public void getJsonResult(String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
+		
+		AppObject.Node node = this.authAppObj.getNode();
+		HttpRequest<Buffer> req = this.webclient.get(node.port, node.host, uri);
+		param.forEach(entry -> {
+			req.addQueryParam(entry.getKey(), "" + entry.getValue());
+		});
+
+		req.timeout(5000).send(ar -> {
+			h.handle(ar);			
+		});
+
+	}
 		
 	
 	public boolean isMatchNoAuthPath(String uri){
