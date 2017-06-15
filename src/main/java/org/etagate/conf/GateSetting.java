@@ -86,6 +86,7 @@ public class GateSetting {
 		authSetting.put("authentication", auth.attributeValue("authentication"));
 		authSetting.put("authorisation", auth.attributeValue("authorisation"));
 		authSetting.put("successfield", auth.attributeValue("successfield"));
+		authSetting.put("mainpage", auth.attributeValue("mainpage"));
 		
 		List<Element> exclude = auth.elements(EXCLUDE_TAG);
 		if(exclude==null)

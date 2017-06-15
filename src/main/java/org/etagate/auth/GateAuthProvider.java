@@ -53,7 +53,7 @@ public class GateAuthProvider implements AuthProvider {
 					return;
 				}
 				
-				String result = u.getString(AuthMgr.successFiled);
+				String result = u.getString(authMgr.getSuccessField());
 				if(S.isNotBlank(result) && !"false".equals(result)){  //成功后，返回用户对象
 					GateUser gu = new GateUser(u);
 					gu.setAuthProvider(this);
@@ -79,9 +79,9 @@ public class GateAuthProvider implements AuthProvider {
 	public void authorise(User user,String permission, Handler<AsyncResult<Boolean>> h){
 		
 		String uri = authMgr.getAuthorisationUrl();
-		
+				
 		JsonObject pricipal = user.principal().copy();
-		pricipal.put("permission", permission);
+		pricipal.put("permission", authMgr.getAuthAppObj().offsetUrl(permission));
 //		System.out.println("authorise uri: "+uri);
 		authMgr.getJsonResult(uri, pricipal, res->{
 			if(res.succeeded()){

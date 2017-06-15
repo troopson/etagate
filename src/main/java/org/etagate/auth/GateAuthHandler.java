@@ -42,6 +42,9 @@ public class GateAuthHandler extends AuthHandlerImpl {
 			request.params().forEach(entry->{
 				p.put(entry.getKey(), entry.getValue());
 			});
+			request.formAttributes().forEach(entry->{
+				p.put(entry.getKey(), entry.getValue());
+			});
 			
 			AuthProvider ap = authMgr.getAuthProvider();
 			ap.authenticate(p, res->{
@@ -56,8 +59,21 @@ public class GateAuthHandler extends AuthHandlerImpl {
 						//在redis中，保存一份登录成功的用户的principal
 						rc.setUser(res.result());
 						HttpServerResponse clientResponse = rc.response();
-						clientResponse.setStatusCode(200);
+
+						String s = u.principal().getString("mainpage");
+						if(s==null)
+							s=this.authMgr.getMainPage();
+						if(s!=null){
+							String mainpage=request.absoluteURI().replace(request.path(), "")+s;
+							System.out.println(request.absoluteURI()+"   "+request.uri()+"   "+request.path()+"   "+mainpage);
+							clientResponse.putHeader("Content-Type", "text/html;charset=utf-8");
+							clientResponse.putHeader("Location", mainpage);
+							clientResponse.setStatusCode(302);
+						}else{
+							clientResponse.setStatusCode(200);
+						}						
 						clientResponse.end("ok");
+						
 					}
 				}else{
 					res.cause().printStackTrace();

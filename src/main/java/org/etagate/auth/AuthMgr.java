@@ -24,14 +24,16 @@ import io.vertx.ext.web.client.WebClient;
  */
 public class AuthMgr {
 
-	private String authenticationUrl="/login";
+	private String authenticationUrl;
 	
-	private String authorisationUrl = "/check_right";
+	private String authorisationUrl;
+	
+	private String mainpage;
 	
 	private String authApp = "waweb";
 	private AppObject authAppObj=null;
 	
-	public static String successFiled="userid";
+	private String successFiled="userid";
 	
 	private static Set<String> no_AuthPath;
 	
@@ -52,8 +54,9 @@ public class AuthMgr {
 		
 		this.authenticationUrl = conf.getString("authentication");
 		this.authorisationUrl = conf.getString("authorisation");
+		this.mainpage = conf.getString("mainpage");
 		this.authApp = conf.getString("app");
-		AuthMgr.successFiled = conf.getString("successfield");
+		this.successFiled = conf.getString("successfield");
 				
 		String sufix = conf.getString("exclude.end");		
 		String noauthpath = conf.getString("exclude.start");	
@@ -83,15 +86,18 @@ public class AuthMgr {
 			return;
 		
 		String trans = sufix.replace(',', '|').replace("*","").replace(".", "\\.");
-		this.not_auth_sufix="[a-zA-Z0-9:/\\.]*("+ trans +")($|\\?.*)";
+		this.not_auth_sufix="[^\\?&#]*("+ trans +")($|\\?.*)";
 		
 	}
 	
 	public void init(WebClient client,AppInfo app) {
 
 		this.webclient= client;
-		this.authAppObj = app.getAppInfo(authApp);
+		this.authAppObj = app.getAppInfo(authApp);		
 		
+		this.authenticationUrl = this.authAppObj.offsetUrl(this.authenticationUrl);
+		this.authorisationUrl = this.authAppObj.offsetUrl(this.authorisationUrl);
+
 		this.authProvider = new GateAuthProvider(this);
 
 	}
@@ -99,7 +105,7 @@ public class AuthMgr {
 	
 	public void getJsonResult(String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
 		
-		AppObject.Node node = this.authAppObj.getNode();
+		AppObject.Node node = this.authAppObj.getNode();		
 		HttpRequest<Buffer> req = this.webclient.get(node.port, node.host, uri);
 		param.forEach(entry -> {
 			req.addQueryParam(entry.getKey(), "" + entry.getValue());
@@ -108,6 +114,8 @@ public class AuthMgr {
 		req.timeout(5000).send(ar -> {
 			h.handle(ar);			
 		});
+		
+		
 
 	}
 		
@@ -144,6 +152,15 @@ public class AuthMgr {
 
 	public String getAuthenticationUrl() {
 		return authenticationUrl;
+	}
+	
+	
+	public String getSuccessField(){
+		return this.successFiled;
+	}
+	
+	public String getMainPage(){
+		return this.mainpage;
 	}
 
 

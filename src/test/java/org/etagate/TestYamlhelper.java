@@ -12,6 +12,8 @@ public class TestYamlhelper {
 	@Test
 	public void test() throws MalformedURLException {
 		InputStream is = this.getClass().getResourceAsStream("/application.yml");
+		if(is== null)
+			return;
 		YamlConfig y=new YamlConfig();
 		y.loadYaml(is);
 		System.out.println(y.toString());

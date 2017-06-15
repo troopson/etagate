@@ -57,12 +57,7 @@ public class RequestHandler implements Handler<RoutingContext> {
 		HttpMethod method = clientRequest.method();
 		String uri = clientRequest.uri();
 		
-		if (appObj.cut_appName) {
-			int i = uri.indexOf("/", 1);
-			String firstPath = uri.substring(1, i);
-			if (appObj.name.equals(firstPath))
-				uri = uri.substring(i);
-		}
+		uri = appObj.offsetUrl(uri);
 
 		AppObject.Node node = appObj.getNode();
 		

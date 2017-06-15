@@ -63,6 +63,18 @@ public class AppObject {
 	}
 	
 	
+	public String offsetUrl(String uri){
+		if (this.cut_appName) {
+			int i = uri.indexOf("/", 1);
+			if(i==-1)
+				return uri;
+			String firstPath = uri.substring(1, i);
+			if (this.name.equals(firstPath))
+				return uri.substring(i);
+		}
+		return uri;
+	}
+	
 	
 	public Node getNode(){
 		return nodeStrategy.getNode();

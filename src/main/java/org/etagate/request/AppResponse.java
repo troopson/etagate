@@ -25,7 +25,8 @@ public class AppResponse {
 	public static void handle(HttpServerRequest clientRequest, HttpServerResponse clientResponse,
 			HttpResponse<Buffer> appResponse) {
 
-		clientResponse.setStatusCode(appResponse.statusCode());
+		int statusCode = appResponse.statusCode();
+		clientResponse.setStatusCode(statusCode);
 		clientResponse.setStatusMessage(appResponse.statusMessage());
 
 		MultiMap appHeaders = appResponse.headers();
@@ -44,15 +45,8 @@ public class AppResponse {
 
 		clientResponse.putHeader("Content-Length",""+appResponse.body().length());
 		
-//		
-//		HttpClientResponse cr=(HttpClientResponse)appResponse;
-//		Pump pump = Pump.pump(cr, clientResponse);
-//		cr.endHandler(v->{
-//			pump.stop();
-//			clientResponse.end();
-//		});
-//		pump.start();
-		
+		String s =appResponse.bodyAsString();
+		System.out.println(s);
 		clientResponse.write(appResponse.body());
 		clientResponse.end();
 	}
