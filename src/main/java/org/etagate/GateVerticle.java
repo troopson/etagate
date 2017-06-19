@@ -100,6 +100,8 @@ public class GateVerticle extends AbstractVerticle {
 
 	}
 
+	public static final String SessionName="web.session";
+	
 	private void addBasicRoute() {
 		router.route().handler(CookieHandler.create());
 
@@ -111,9 +113,9 @@ public class GateVerticle extends AbstractVerticle {
 
 		SessionStore sessionStore = null;
 		if (vertx.isClustered())
-			sessionStore = ClusteredSessionStore.create(vertx);
+			sessionStore = ClusteredSessionStore.create(vertx,SessionName);
 		else
-			sessionStore = LocalSessionStore.create(vertx);
+			sessionStore = LocalSessionStore.create(vertx,SessionName);
 		SessionHandler sessionHandler = SessionHandler.create(sessionStore);
 		sessionHandler.setNagHttps(false);
 		router.route().handler(sessionHandler);

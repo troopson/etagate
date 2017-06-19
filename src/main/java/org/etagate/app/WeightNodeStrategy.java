@@ -6,8 +6,11 @@ package org.etagate.app;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.etagate.app.AppObject.Node;
+
+import io.vertx.core.http.HttpServerRequest;
 
 /**
  * @author 瞿建军       Email: jianjun.qu@istuary.com
@@ -20,7 +23,7 @@ public class WeightNodeStrategy implements NodeStragegy {
 	private int totalWeight=0;
 	
 	@Override
-	public Node getNode(){
+	public Node getNode(Optional<HttpServerRequest> clientRequest){
 		int sum =0 ;
 		int rand=(int)(1+Math.random()*totalWeight);
 		for(Node n : node){

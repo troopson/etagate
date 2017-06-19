@@ -6,9 +6,12 @@ package org.etagate.app;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.etagate.app.AppObject.Node;
+
+import io.vertx.core.http.HttpServerRequest;
 
 /**
  * @author 瞿建军       Email: jianjun.qu@istuary.com
@@ -23,7 +26,7 @@ public class RoundNodeStrategy implements NodeStragegy {
 	private int size = 1;
 	
 	@Override
-	public Node getNode(){
+	public Node getNode(Optional<HttpServerRequest> clientRequest){
 		if(size==1)
 			return node.get(0);
 		

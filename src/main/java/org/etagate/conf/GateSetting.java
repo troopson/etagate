@@ -43,7 +43,7 @@ public class GateSetting {
 	public static boolean hasAuth=true;
 	public static AppInfo appInfo =null;
 	
-	
+			
 	public static void parse(URL is) {
 		SAXReader saxReader = new SAXReader();
 
@@ -150,6 +150,7 @@ public class GateSetting {
 		
 		boolean cutname = "true".equalsIgnoreCase(appNode.attributeValue("cutContextPath")) ? true : false;
 		String timeout = appNode.attributeValue("timeout");
+		String dev = appNode.attributeValue("dev");
 
 		List<Element> nodes = appNode.elements(NODE_TAG);
 		List<Element> include = appNode.elements(INCLUDE_TAG);
@@ -160,6 +161,8 @@ public class GateSetting {
 		a.setCutAppName(cutname);
 		if (S.isNotBlank(timeout))
 			a.setTimeout(Long.parseLong(timeout));
+		if("true".equals(dev))
+			a.setDev(true);
 
 		if (nodes != null && !nodes.isEmpty()) {
 			nodes.forEach(n -> {

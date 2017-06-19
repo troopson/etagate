@@ -4,9 +4,12 @@
 package org.etagate.app;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import org.etagate.helper.S;
+
+import io.vertx.core.http.HttpServerRequest;
 
 /**
  * @author 瞿建军       Email: jianjun.qu@istuary.com
@@ -18,6 +21,10 @@ public class AppObject {
 	public boolean cut_appName=true;
 	public long timeout=5000;
 	
+	private boolean dev=false;
+	
+
+
 	private Set<String> routePath=null;
 	
 	private NodeStragegy nodeStrategy  = null;
@@ -62,6 +69,10 @@ public class AppObject {
 		this.cut_appName=iscut;
 	}
 	
+
+	public void setDev(boolean dev) {
+		this.dev = dev;
+	}
 	
 	public String offsetUrl(String uri){
 		if (this.cut_appName) {
@@ -76,8 +87,15 @@ public class AppObject {
 	}
 	
 	
-	public Node getNode(){
-		return nodeStrategy.getNode();
+	public Node getNode(HttpServerRequest clientRequest){	
+		if(clientRequest!=null && this.dev){
+			String hostport = clientRequest.getParam(this.name);
+			if(S.isNotBlank(hostport)){
+				String[] ipp = hostport.split(":");
+				return new Node(ipp[0], Integer.parseInt(ipp[1]),1);
+			}
+		}
+		return nodeStrategy.getNode(Optional.ofNullable(clientRequest));
 	}
 	
 	

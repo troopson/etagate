@@ -60,7 +60,7 @@ public class RequestHandler implements Handler<RoutingContext> {
 		
 		uri = appObj.offsetUrl(uri);
 
-		AppObject.Node node = appObj.getNode();
+		AppObject.Node node = appObj.getNode(clientRequest);
 		
 		log.info("request:" + appObj.name + "  method:" + method + "   http://" + node.host + ":"
 				+ node.port + uri);

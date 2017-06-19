@@ -6,6 +6,8 @@
    <property name="static.file.dir">D:/source/phoenix/etagate/html</property> 
     <!--上传文件后，保存的目录，目前暂时只能保存，微服务应用还不能获取到文件-->
    <property name="upload.dir">d:/temp</property>
+  
+   <!-- property name="server.instance">4</property-->
    
    <!--
     权限和访问控制的内容，gate网关会将所有的权限校验和访问控制转发给对应的app进行处理
@@ -30,7 +32,7 @@
 `cutContextPath`，可以设置转发的时候，是否要剪除第一级，默认是不剪除。 `timeout`表示转发请求时候的超时时间，默认值为5000。
    每个app都会接收到url第一级是该app名称的url，此外，可以通过include来匹配其他路径，支持通配符和正则表达式
 -->
-   <app name="base">
+   <app name="base" dev="true">
       <node host="127.0.0.1" port="8082"/>
    </app>
    <app name="auth" cutContextPath="false" timeout="3000">
@@ -42,10 +44,13 @@
    <app name="A3" timeout="60000">
    	  <node host="cmgl.aisino.com" port="8896"/>   
    </app>   
-   <app name="xtgl" cutContextPath="true">
+   <app name="zhuguojun" timeout="60000">
+   	  <node host="172.21.99.12" port="8896"/>   
+   </app>      
+   <app name="xtgl" cutContextPath="false" dev="true">
       <!-- node host="172.21.9.15" port="8080" weight = "1"/>
       <node host="172.21.9.15" port="8080" weight = "4"/-->
-      <node host="172.18.7.44" port="8888" weight = "1"/>
+      <node host="172.18.7.441" port="8888" weight = "1"/>
       <include path="/static/*"/>
       <include path="/weblogin/"/>
       <include path="/login/"/>

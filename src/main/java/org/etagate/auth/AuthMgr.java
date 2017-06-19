@@ -105,7 +105,7 @@ public class AuthMgr {
 	
 	public void getJsonResult(String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
 		
-		AppObject.Node node = this.authAppObj.getNode();		
+		AppObject.Node node = this.authAppObj.getNode(null);		
 		HttpRequest<Buffer> req = this.webclient.get(node.port, node.host, uri);
 		param.forEach(entry -> {
 			req.addQueryParam(entry.getKey(), "" + entry.getValue());

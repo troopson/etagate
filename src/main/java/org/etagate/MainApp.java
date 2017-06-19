@@ -42,7 +42,9 @@ public class MainApp extends AbstractVerticle {
 					conf.put(e.getKey(), e.getValue());
 				});
 				
-				DeploymentOptions voptions = new DeploymentOptions().setInstances(4);				
+				int instance = Integer.parseInt(conf.getString("server.instance","1"));
+				
+				DeploymentOptions voptions = new DeploymentOptions().setInstances(instance);				
 				voptions.setConfig(conf);
 				vertx.deployVerticle(GateVerticle.class.getName(), voptions);
 				

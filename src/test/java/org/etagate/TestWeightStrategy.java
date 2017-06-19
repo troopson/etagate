@@ -31,7 +31,7 @@ public class TestWeightStrategy {
 		w.addNode(a.new Node("10.10.10.10",80,10));
 		
 		for(int i=0; i<100 ;i++)
-		   System.out.println(w.getNode().toString());
+		   System.out.println(w.getNode(null).toString());
 		
 		
 	}
