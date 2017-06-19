@@ -86,12 +86,14 @@
   通过gradle jar打包出一个fatjar，然后运行一下命令启动API网关
 
   `java -jar etagate-fat.jar  -gfile conf/gate.xml`
+  
   或者
+  
   `java -jar etagate-fat.jar  -gfile http://you.config.server/gate.xml`
 
 
 
-##关于权限整合
+## 关于权限整合
 
 api网关本身不处理权限，而是将权限委托给鉴权的app节点进行处理。
 
@@ -109,6 +111,7 @@ api网关本身不处理权限，而是将权限委托给鉴权的app节点进�
 在有多人开发同一个模块的时候，可以每个人机器上部署一个api网关，然后各自配置自己的api网关，另外还有一种模式是，在服务器上部署一个api网关，然后针对正在开发的模块，配置 属性 dev="true"。
 
 ```xml
+
     <app name="waweb" dev="true" timeout="90000">
         <node host="172.18.4.44" port="8080"/>
     </app>   
