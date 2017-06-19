@@ -56,7 +56,7 @@ public class AuthMgr {
 		this.authorisationUrl = conf.getString("authorisation");
 		this.mainpage = conf.getString("mainpage");
 		this.authApp = conf.getString("app");
-		this.successFiled = conf.getString("successfield");
+		this.successFiled = conf.getString("successfield","userid");
 				
 		String sufix = conf.getString("exclude.end");		
 		String noauthpath = conf.getString("exclude.start");	

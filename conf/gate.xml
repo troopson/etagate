@@ -15,7 +15,12 @@
     exclude end：不需要进行访问控制的资源后缀，
     exclude start：不需要进行访问控制的url开头，（不支持通配符）
    -->
-   <auth app="auth" authentication="/weblogin" authorisation="/checkpermission" mainpage= "/auth/sys/user/index" successfield="no">
+   <!-- auth app="xtgl" authentication="/weblogin" authorisation="/checkpermission" mainpage= "/xtgl/sys/user/index" successfield="no">
+      <exclude end="*.bmp,*.gif,*.jpg,*.png,*.woff,*.woff2,*.css,*.js,*.ico" />
+      <exclude start="/flume/,/flume2/,/login,/logout" />      
+   </auth-->
+   
+   <auth app="auth" authentication="/auth/login" authorisation="/auth/checkpermission" mainpage= "/auth/mainpage" successfield="userid">
       <exclude end="*.bmp,*.gif,*.jpg,*.png,*.woff,*.woff2,*.css,*.js,*.ico" />
       <exclude start="/flume/,/flume2/,/login,/logout" />      
    </auth>
@@ -28,13 +33,16 @@
    <app name="base">
       <node host="127.0.0.1" port="8082"/>
    </app>
-   <!-- app name="auth" cutContextPath="false" timeout="3000">
+   <app name="auth" cutContextPath="false" timeout="3000">
       <node host="127.0.0.1" port="8080"/>
-   </app-->
+   </app>
    <app name="eventpersist" cutContextPath="true">
       <node host="172.21.9.8" port="7777"/>
-   </app>      
-   <app name="auth" cutContextPath="true">
+   </app>   
+   <app name="A3" timeout="60000">
+   	  <node host="cmgl.aisino.com" port="8896"/>   
+   </app>   
+   <app name="xtgl" cutContextPath="true">
       <!-- node host="172.21.9.15" port="8080" weight = "1"/>
       <node host="172.21.9.15" port="8080" weight = "4"/-->
       <node host="172.18.7.44" port="8888" weight = "1"/>

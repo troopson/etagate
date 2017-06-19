@@ -45,8 +45,8 @@ public class AppResponse {
 
 		clientResponse.putHeader("Content-Length",""+appResponse.body().length());
 		
-		String s =appResponse.bodyAsString();
-		System.out.println(s);
+//		String s =appResponse.bodyAsString();
+//		System.out.println(s);
 		clientResponse.write(appResponse.body());
 		clientResponse.end();
 	}

@@ -3,6 +3,7 @@
  */
 package org.etagate.request;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -111,7 +112,10 @@ public class RequestHandler implements Handler<RoutingContext> {
 		GateUser user = (GateUser) clientRc.user();
 //		System.out.println("==============="+user.principal().encode());
 		if (user != null)
-			heads.add(GATE_PRINCIPAL, user.principal().encode());
+			try {
+				heads.add(GATE_PRINCIPAL, new String(user.principal().encode().getBytes("UTF-8"),"ISO8859-1"));
+			} catch (UnsupportedEncodingException e) {}
+			
 		
 	}
 	

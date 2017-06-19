@@ -60,9 +60,11 @@ public class GateVerticle extends AbstractVerticle {
 		
 		this.createWebClient();
 		
-		authMgr = new AuthMgr(GateSetting.authSetting);
-		authMgr.init(this.webclient,app);
-
+		if(GateSetting.hasAuth){
+			authMgr = new AuthMgr(GateSetting.authSetting);
+			authMgr.init(this.webclient,app);
+		}
+		
 		router = Router.router(this.vertx);
 		
 		this.initRoutes(server);
@@ -81,9 +83,11 @@ public class GateVerticle extends AbstractVerticle {
 
 		this.addBasicRoute();
 
-		GateAuthHandler authHandler = new GateAuthHandler(authMgr);
-		router.route().handler(authHandler::handle);
-
+		if(GateSetting.hasAuth){
+			GateAuthHandler authHandler = new GateAuthHandler(authMgr);
+			router.route().handler(authHandler::handle);
+		}
+		
 		AppRoute.addAppRoute(GateSetting.appInfo,webclient,router);
 
 		//如果配置了静态文件目录，那么在没有命中前面的route path时，可以直接映射到静态文件目录中去
@@ -114,7 +118,9 @@ public class GateVerticle extends AbstractVerticle {
 		sessionHandler.setNagHttps(false);
 		router.route().handler(sessionHandler);
 
-		router.route().handler(UserSessionHandler.create(authMgr.getAuthProvider()));
+		if(GateSetting.hasAuth){
+			router.route().handler(UserSessionHandler.create(authMgr.getAuthProvider()));
+		}
 
 	}
 
@@ -129,9 +135,6 @@ public class GateVerticle extends AbstractVerticle {
 		this.webclient = WebClient.create(vertx,op);
 	}
 
-	
-	public AuthMgr getAuthMgr() {
-		return authMgr;
-	}
+
 
 }

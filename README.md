@@ -1,15 +1,25 @@
 # etagate
-一个HTTP API网关实现
+一个HTTP API网关实现，用于HTTP应用的微服务化。
 
-# 主要功能
+
+
+
+## 主要功能
 
 + 通过xml的方式定义微服务
+
 + 支持服务集群的配置
+
 + 支持权限的控制和自定义
+
 + 支持服务contextPath的修剪
+
 + 支持设置不控制权限的链接配置
 
-# 使用说明
+  ​
+
+
+## 使用说明
 
 + 配置一个xml文件，文件中定义各个微服务的地址和说明。示例如下：
 
@@ -29,18 +39,21 @@
     app: 完成auth相关功能的app名称，需要在下面的app定义中进行定义
     authentication：用户身份校验的url，如果校验成功，返回一个json对象，json对象中存在successfield字段，就会认为校验通过，返回空或者返回的json中没有successfield字段，会认为不通过
     authorisation：访问控制的url，返回字符串true，认为是有权访问，其他都认为是无权访问
-    exclude end：不需要进行访问控制的资源后缀，
+    mainpage：在用户身份校验成功后，自动跳转的页面，如果不配置（比如通过ajax方式发起的请求），直接返回ok字符串
+    exclude end：不需要进行访问控制的资源后缀，自动排除了 *.bmp,*.ico,*.gif,*.jpg,*.png,*.woff,*.css,*.js 等文件
     exclude start：不需要进行访问控制的url开头，（不支持通配符）
    -->
-   <auth app="auth" authentication="/auth/login" authorisation="/auth/checkPermission" successfield="userid">
-      <exclude end="*.bmp,*.gif,*.jpg,*.png,*.woff,*.css,*.js" />
-      <exclude start="/flume/,/flume2/" />
+ 
+   <auth app="auth" authentication="/auth/login" authorisation="/auth/checkPermission" mainpage= "/auth/mainpage" successfield="userid">
+      <exclude end="**.woff2,*.css2" />
+      <exclude start="/login/,/logout/" />
    </auth>
 
    <!--
    一个app标签，表示一个微服务，name是访问该微服务的contextPath，网关识别url中第一级，将其作为微服务的名称，相应的转发给该服务进行处理。通过配置
 `cutContextPath`，可以设置转发的时候，是否要剪除第一级，默认是不剪除。 `timeout`表示转发请求时候的超时时间，默认值为5000。
    每个app都会接收到url第一级是该app名称的url，此外，可以通过include来匹配其他路径，支持通配符和正则表达式
+  balanceStrategy: 当配置有多个node的时候，默认是采用轮流处理请求的方式，也可以通过配置一个NodeStragegy实现，来指定对请求处理的逻辑，目前系统还提供一个WeightNodeStrategy实现，可以通过node节点指定的weight来分发请求。
 -->
    <app name="base">
       <node host="127.0.0.1" port="8082"/>
@@ -50,10 +63,12 @@
    </app>
    <app name="eventpersist" cutContextPath="true">
       <node host="172.21.9.8" port="7777"/>
+      <node host="172.21.9.9" port="7777"/>
    </app>      
-   <app name="waweb">
-      <node host="172.21.9.15" port="8080"/>
-      <node host="172.21.9.16" port="8080"/>
+  
+   <app name="waweb" balanceStrategy="org.etagate.app.WeightNodeStrategy">
+      <node host="172.21.9.15" port="8080" weight="1"/>
+      <node host="172.21.9.16" port="8080" weight="3"/>
       <include path="/static*"/>
       <include path="/a?login"/>
       <include path="/risk/*"/>
@@ -64,17 +79,36 @@
    </app>
 
 </gate>
-
 ```
 
 +  启动API网关的命令
-  
+
   通过gradle jar打包出一个fatjar，然后运行一下命令启动API网关
-  
+
   `java -jar etagate-fat.jar  -gfile conf/gate.xml`
   或者
   `java -jar etagate-fat.jar  -gfile http://you.config.server/gate.xml`
 
 
 
+##关于权限整合
+
+api网关本身不处理权限，而是将权限委托给鉴权的app节点进行处理。
+
+### 身份认证
+登录认证的时候，app将调用 authentication 指定的请求地址，并且会将登录页面上填写的值，作为请求参数一并提交。请求成功后，需要返回了一个json对象，json对象中，必须包含了successfield所指定的key值（key值不能为false），身份鉴别成功后，会自动跳转到mainpage所指定的页面上去，也可以在json对象中指定一个mainpage属性，这样可以覆盖gate.xml中配置的mainpage，如果网关没有找到mainpage信息，那么直接返回一个ok字符串。
+
+#### 访问的权限控制
+每次收到url请求的时候，如果url不在忽略的列表中，那么网关都将把该url发送到鉴权app上进行权限校验，校验通过发送http请求到authorisation指定的请求地址，请求的参数，包含身份认证时，返回json中的每个值，还包括一个permission参数，这个参数的值为要访问的url。如果返回true，那么认为有权访问，然后api网关将把请求转发给对应的app进行处理。
+
+#### 请求中的用户身份信息
+每次api网关转发一个请求的时候，都会把用户身份信息放到HTTP Request的Header中，名称为 `gate_principal`，就是之前身份鉴别时，鉴权app返回的json对象序列化为字符串后的值。在app中，如果需要获取用户信息，可以从Header中得到值，并反序列化为json对象。此外，如果json中带有中文，请先将字符从`ISO8859-1`转为`UTF-8`。
+
+
+
+## 开发路线图
+
+1. 目前对上传的文件，app尚不能获取，下一步将提供接口，让app可以获取到上传的文件；
+2. 在配置了多个node时，如果其中有node无法提供服务了，系统不能自动识别并且停止转发，下一步将提供node节点熔断、摘除、动态添加的功能；
+3. 优化代码结构，提升转发性能。
 

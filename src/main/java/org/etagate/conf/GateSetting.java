@@ -4,6 +4,7 @@
 package org.etagate.conf;
 
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,11 +33,14 @@ public class GateSetting {
 	public static final String AUTH_TAG = "auth";
 	public static final String EXCLUDE_TAG = "exclude";
 	public static final String PROPERTY_TAG = "property";
+	
+	public static final String ResType = "*.bmp,*.gif,*.jpg,*.png,*.woff,*.woff2,*.css,*.js,*.ico";
 
 	public static final Logger log = LoggerFactory.getLogger(GateSetting.class);
 
 	public static JsonObject properties=new JsonObject();
 	public static JsonObject authSetting = new JsonObject();
+	public static boolean hasAuth=true;
 	public static AppInfo appInfo =null;
 	
 	
@@ -76,11 +80,17 @@ public class GateSetting {
 	}
 	
 	
+	public static boolean hasAuth(){
+		return hasAuth;
+	}
+	
 	@SuppressWarnings("unchecked")
 	private static void parseAuth(Element root){
 		Element auth = root.element(AUTH_TAG);
-		if(auth==null)
+		if(auth==null){
+			hasAuth=false;
 			return;
+		}
 		
 		authSetting.put("app", auth.attributeValue("app"));
 		authSetting.put("authentication", auth.attributeValue("authentication"));
@@ -93,17 +103,23 @@ public class GateSetting {
 			return;
 		Set<String> end =new HashSet<>();
 		Set<String> start = new HashSet<>();
+		addExcludes(end, ResType);
 		exclude.forEach(e ->{
 			String ends = e.attributeValue("end");
 			String starts = e.attributeValue("start");
-			if(S.isNotBlank(ends))
-				end.add(ends);
-			if(S.isNotBlank(starts))
-				start.add(starts);
+			addExcludes(end, ends);
+			addExcludes(start, starts);
 		});
 		authSetting.put("exclude.end", S.join(end, ","));
 		authSetting.put("exclude.start", S.join(start, ","));
 		
+	}
+	
+	private static void addExcludes(Set<String> set, String def){
+		if(S.isBlank(def))
+			return;
+		String[] ex = def.split(",");
+		set.addAll(Arrays.asList(ex));		
 	}
 	
 	@SuppressWarnings("unchecked")

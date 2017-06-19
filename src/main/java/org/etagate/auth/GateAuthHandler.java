@@ -64,7 +64,7 @@ public class GateAuthHandler extends AuthHandlerImpl {
 						if(s==null)
 							s=this.authMgr.getMainPage();
 						if(s!=null){
-							String mainpage=request.absoluteURI().replace(request.path(), "")+s;
+							String mainpage=request.absoluteURI().replace(request.uri(), "")+s;
 							System.out.println(request.absoluteURI()+"   "+request.uri()+"   "+request.path()+"   "+mainpage);
 							clientResponse.putHeader("Content-Type", "text/html;charset=utf-8");
 							clientResponse.putHeader("Location", mainpage);
