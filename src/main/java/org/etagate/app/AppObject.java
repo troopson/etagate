@@ -17,18 +17,19 @@ import io.vertx.core.http.HttpServerRequest;
  */
 public class AppObject {
 	
+	
+	
 	public String name;
 	public boolean cut_appName=true;
 	public long timeout=5000;
 	
 	private boolean dev=false;
-	
-
 
 	private Set<String> routePath=null;
 	
 	private NodeStragegy nodeStrategy  = null;
 
+	private DevModeSupport devmode=null;
 
 	public AppObject(String name){
 		this(name,null);
@@ -41,7 +42,7 @@ public class AppObject {
 		else
 			this.nodeStrategy = s;
 	}
-	
+		
 	public void addNode(String host, int port, int weight){
 		if(S.isBlank(host))
 			return;
@@ -69,11 +70,12 @@ public class AppObject {
 		this.cut_appName=iscut;
 	}
 	
-
-	public void setDev(boolean dev) {
-		this.dev = dev;
-	}
 	
+	public void setDevmode(DevModeSupport devmode) {
+		this.devmode = devmode;
+		this.dev = true;
+	}
+
 	public String offsetUrl(String uri){
 		if (this.cut_appName) {
 			int i = uri.indexOf("/", 1);
@@ -88,12 +90,10 @@ public class AppObject {
 	
 	
 	public Node getNode(HttpServerRequest clientRequest){	
-		if(clientRequest!=null && this.dev){
-			String hostport = clientRequest.getParam(this.name);
-			if(S.isNotBlank(hostport)){
-				String[] ipp = hostport.split(":");
-				return new Node(ipp[0], Integer.parseInt(ipp[1]),1);
-			}
+		if(clientRequest!=null && this.dev && devmode!=null){
+			Node n = devmode.getDevNode(this, clientRequest);
+			if(n!=null)
+				return n;
 		}
 		return nodeStrategy.getNode(Optional.ofNullable(clientRequest));
 	}

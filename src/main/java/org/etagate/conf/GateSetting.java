@@ -15,6 +15,7 @@ import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.etagate.app.AppInfo;
 import org.etagate.app.AppObject;
+import org.etagate.app.DevModeSupport;
 import org.etagate.app.NodeStragegy;
 import org.etagate.helper.S;
 
@@ -156,13 +157,15 @@ public class GateSetting {
 		List<Element> include = appNode.elements(INCLUDE_TAG);
 
 		NodeStragegy ns = createNodeStrategy(appNode);
+		DevModeSupport devmode = new DevModeSupport();
 		
 		AppObject a = new AppObject(name,ns);
 		a.setCutAppName(cutname);
 		if (S.isNotBlank(timeout))
 			a.setTimeout(Long.parseLong(timeout));
 		if("true".equals(dev))
-			a.setDev(true);
+			a.setDevmode(devmode);
+		
 
 		if (nodes != null && !nodes.isEmpty()) {
 			nodes.forEach(n -> {
