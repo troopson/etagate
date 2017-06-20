@@ -14,7 +14,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.client.HttpResponse;
 
 /**
- * @author 瞿建军 Email: jianjun.qu@istuary.com 2017年4月12日
+ * @author 瞿建军 Email: troopson@163.com 2017年4月12日
  */
 public class AppResponse {
 

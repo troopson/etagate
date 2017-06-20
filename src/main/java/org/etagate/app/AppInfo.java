@@ -10,7 +10,7 @@ import java.util.function.BiConsumer;
 import org.etagate.helper.S;
 
 /**
- * @author 瞿建军 Email: jianjun.qu@istuary.com 2017年4月12日
+ * @author 瞿建军 Email: troopson@163.com 2017年4月12日
  */
 public class AppInfo {
 

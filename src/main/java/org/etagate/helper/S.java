@@ -10,7 +10,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 /**
- * @author 瞿建军       Email: jianjun.qu@istuary.com
+ * @author 瞿建军       Email: troopson@163.com
  * 2017年3月24日
  */
 public class S {

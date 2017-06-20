@@ -9,7 +9,7 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 
 /**
- * @author 瞿建军 Email: jianjun.qu@istuary.com 2017年4月19日
+ * @author 瞿建军 Email: troopson@163.com 2017年4月19日
  */
 
 public class TestRequestMain {

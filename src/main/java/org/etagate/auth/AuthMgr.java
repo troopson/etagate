@@ -19,7 +19,7 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 
 /**
- * @author 瞿建军       Email: jianjun.qu@istuary.com
+ * @author 瞿建军       Email: troopson@163.com
  * 2017年5月18日
  */
 public class AuthMgr {

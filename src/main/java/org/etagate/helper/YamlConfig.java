@@ -14,7 +14,7 @@ import org.yaml.snakeyaml.Yaml;
 import io.vertx.core.json.JsonObject;
 
 /**
- * @author 瞿建军 Email: jianjun.qu@istuary.com 2017年5月8日
+ * @author 瞿建军 Email: troopson@163.com 2017年5月8日
  */
 public class YamlConfig {
 

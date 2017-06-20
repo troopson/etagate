@@ -12,7 +12,7 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.impl.AuthHandlerImpl;
 
 /**
- * @author 瞿建军 Email: jianjun.qu@istuary.com 2017年5月17日
+ * @author 瞿建军 Email: troopson@163.com 2017年5月17日
  */
 public class GateAuthHandler extends AuthHandlerImpl {
 	

@@ -8,7 +8,7 @@ import io.vertx.ext.unit.TestSuite;
 import io.vertx.ext.unit.report.ReportOptions;
 
 /**
- * @author 瞿建军       Email: jianjun.qu@istuary.com
+ * @author 瞿建军       Email: troopson@163.com
  * 2017年5月16日
  */
 public class VertxTest {

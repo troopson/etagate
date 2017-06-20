@@ -14,7 +14,7 @@ import org.etagate.app.AppObject.Node;
 import io.vertx.core.http.HttpServerRequest;
 
 /**
- * @author 瞿建军       Email: jianjun.qu@istuary.com
+ * @author 瞿建军       Email: troopson@163.com
  * 2017年5月27日
  */
 public class RoundNodeStrategy implements NodeStragegy {

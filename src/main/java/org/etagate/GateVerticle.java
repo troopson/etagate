@@ -25,7 +25,7 @@ import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
 
 /**
- * @author 瞿建军 Email: jianjun.qu@istuary.com 2017年4月11日
+ * @author 瞿建军 Email: troopson@163.com 2017年4月11日
  */
 public class GateVerticle extends AbstractVerticle {
 

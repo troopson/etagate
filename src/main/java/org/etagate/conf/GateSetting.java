@@ -24,7 +24,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
 /**
- * @author 瞿建军 Email: jianjun.qu@istuary.com 2017年5月27日
+ * @author 瞿建军 Email: troopson@163.com 2017年5月27日
  */
 public class GateSetting {
 

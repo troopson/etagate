@@ -15,7 +15,7 @@ import io.vertx.ext.auth.User;
 import io.vertx.ext.web.client.HttpResponse;
 
 /**
- * @author 瞿建军       Email: jianjun.qu@istuary.com
+ * @author 瞿建军       Email: troopson@163.com
  * 2017年2月23日
  */
 public class GateAuthProvider implements AuthProvider {

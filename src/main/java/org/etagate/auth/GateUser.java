@@ -12,7 +12,7 @@ import io.vertx.ext.auth.AuthProvider;
 import io.vertx.ext.auth.User;
 
 /**
- * @author 瞿建军 Email: jianjun.qu@istuary.com 2017年2月23日
+ * @author 瞿建军 Email: troopson@163.com 2017年2月23日
  */
 public class GateUser extends AbstractUser {
 

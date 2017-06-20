@@ -6,7 +6,7 @@ package org.etagate.auth;
 import io.vertx.ext.web.Router;
 
 /**
- * @author 瞿建军       Email: jianjun.qu@istuary.com
+ * @author 瞿建军       Email: troopson@163.com
  * 2017年5月19日
  */
 public class AuthRoute {
