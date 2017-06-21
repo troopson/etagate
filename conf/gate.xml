@@ -39,18 +39,15 @@
       <node host="127.0.0.1" port="8080"/>
    </app>
    <app name="eventpersist" cutContextPath="true">
-      <node host="172.21.9.8" port="7777"/>
+      <node host="127.0.0.1" port="7777"/>
    </app>   
    <app name="A3" timeout="60000">
    	  <node host="cmgl.aisino.com" port="8896"/>   
-   </app>   
-   <app name="zhuguojun" timeout="60000">
-   	  <node host="172.21.99.12" port="8896"/>   
-   </app>      
+   </app>       
    <app name="xtgl" cutContextPath="false" dev="true">
       <!-- node host="172.21.9.15" port="8080" weight = "1"/>
       <node host="172.21.9.15" port="8080" weight = "4"/-->
-      <node host="172.18.7.441" port="8888" weight = "1"/>
+      <node host="172.18.7.44" port="8888" weight = "1"/>
       <include path="/static/*"/>
       <include path="/weblogin/"/>
       <include path="/login/"/>

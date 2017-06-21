@@ -155,6 +155,9 @@ public class GateSetting {
 
 		List<Element> nodes = appNode.elements(NODE_TAG);
 		List<Element> include = appNode.elements(INCLUDE_TAG);
+		
+		if(nodes==null || nodes.isEmpty())
+			throw new NullPointerException("Tag <app> must contains at least one <node> tag. \r\n"+appNode.asXML());
 
 		NodeStragegy ns = createNodeStrategy(appNode);
 		DevModeSupport devmode = new DevModeSupport();

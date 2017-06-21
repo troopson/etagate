@@ -30,9 +30,9 @@
     <!--网关监听的端口，不配置的话默认是80-->
    <property name="port">8088</property>
     <!--静态文件目录，如果所有app都没有route到，最后会选择到静态文件目录--> 
-   <property name="static.file.dir">D:/source/phoenix/etagate/html</property> 
+   <property name="static.file.dir">data/html</property> 
     <!--上传文件后，保存的目录，目前暂时只能保存，微服务应用还不能获取到文件-->
-   <property name="upload.dir">d:/temp</property>
+   <property name="upload.dir">data/upload</property>
    
    <!--
     权限和访问控制的内容，gate网关会将所有的权限校验和访问控制转发给对应的app进行处理
@@ -86,16 +86,16 @@
   通过gradle jar打包出一个fatjar，然后运行一下命令启动API网关
 
   `java -jar etagate-fat.jar  -gfile conf/gate.xml`
-  
+
   或者
-  
+
   `java -jar etagate-fat.jar  -gfile http://you.config.server/gate.xml`
 
 
 
-## 关于权限整合
+## 关于权限控制
 
-api网关本身不处理权限，而是将权限委托给鉴权的app节点进行处理。
+api网关本身不处理权限，而是将权限委托给鉴权的app节点进行处理。如果没有定义`<auth>`标签，那么api网关将忽略权限的处理。
 
 ### 身份认证
 登录认证的时候，app将调用 authentication 指定的请求地址，并且会将登录页面上填写的值，作为请求参数一并提交。请求成功后，需要返回了一个json对象，json对象中，必须包含了successfield所指定的key值（key值不能为false），身份鉴别成功后，会自动跳转到mainpage所指定的页面上去，也可以在json对象中指定一个mainpage属性，这样可以覆盖gate.xml中配置的mainpage，如果网关没有找到mainpage信息，那么直接返回一个ok字符串。
@@ -117,9 +117,11 @@ api网关本身不处理权限，而是将权限委托给鉴权的app节点进�
     </app>   
  
 ```
-然后在访问的时候，可以在请求中加上参数动态指定服务器地址：
+访问时，在请求中加上参数动态指定服务器地址：
 `http://apigate.com:8888/waweb/index.html?waweb=192.168.112.12:8000`
 对开发人员来说，通过这种机制，可以将api网关服务器上面的请求，转发到自己开发机器上进行调试。
+
+
 
 
 ## 开发路线图
