@@ -19,7 +19,7 @@ public class GateAuthHandler extends AuthHandlerImpl {
 	private final AuthMgr authMgr;
 
 	public GateAuthHandler(AuthMgr authMgr) {
-		super(authMgr.getAuthProvider());
+		super(authMgr.authProvider);
 		this.authMgr = authMgr;	
 	}
 	
@@ -46,7 +46,7 @@ public class GateAuthHandler extends AuthHandlerImpl {
 				p.put(entry.getKey(), entry.getValue());
 			});
 			
-			AuthProvider ap = authMgr.getAuthProvider();
+			AuthProvider ap = authMgr.authProvider;
 			ap.authenticate(p, res->{
 				if(res.succeeded()){
 					User u = res.result();
@@ -96,7 +96,7 @@ public class GateAuthHandler extends AuthHandlerImpl {
 	@Override
 	protected void authorise(User user, RoutingContext context) {
 //		System.out.println("authorise =>"+user.principal().toString());
-		((GateUser)user).isAuthorised(authMgr.getAuthProvider(),context.request().uri(),  res -> {
+		((GateUser)user).isAuthorised(authMgr.authProvider,context.request().uri(),  res -> {
 	        if (res.succeeded()) {
 	           if (res.result()) {
 	              context.next();

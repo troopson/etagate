@@ -13,10 +13,10 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
-import org.etagate.app.AppInfo;
-import org.etagate.app.AppObject;
+import org.etagate.app.App;
+import org.etagate.app.AppContain;
 import org.etagate.app.DevModeSupport;
-import org.etagate.app.NodeStragegy;
+import org.etagate.app.node.NodeStragegy;
 import org.etagate.helper.S;
 
 import io.vertx.core.json.JsonObject;
@@ -42,7 +42,7 @@ public class GateSetting {
 	public static JsonObject properties=new JsonObject();
 	public static JsonObject authSetting = new JsonObject();
 	public static boolean hasAuth=true;
-	public static AppInfo appInfo =null;
+	public static AppContain appContain =null;
 	
 			
 	public static void parse(URL is) {
@@ -129,18 +129,18 @@ public class GateSetting {
 		List<Element> l = root.elements(APP_TAG);
 		// System.out.println("====================here=========="+l.size()+"
 		// "+el.toString());
-		appInfo = new AppInfo();
+		appContain = new AppContain();
 		
 		l.forEach(app -> {
 			// System.out.println(app.toString());
-			buildAppObject(appInfo, app);
+			buildAppObject(appContain, app);
 		});
 		
 	}
 	
 	
 	@SuppressWarnings("unchecked")
-	private static void buildAppObject(AppInfo appinfo, Element appNode) {
+	private static void buildAppObject(AppContain appinfo, Element appNode) {
 
 		String name = appNode.attributeValue("name");
 
@@ -162,7 +162,7 @@ public class GateSetting {
 		NodeStragegy ns = createNodeStrategy(appNode);
 		DevModeSupport devmode = new DevModeSupport();
 		
-		AppObject a = new AppObject(name,ns);
+		App a = new App(name,ns);
 		a.setCutAppName(cutname);
 		if (S.isNotBlank(timeout))
 			a.setTimeout(Long.parseLong(timeout));

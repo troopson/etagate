@@ -6,16 +6,14 @@ package org.etagate.auth;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.etagate.app.AppInfo;
-import org.etagate.app.AppObject;
+import org.etagate.app.App;
+import org.etagate.app.AppContain;
+import org.etagate.app.node.Node;
 import org.etagate.helper.S;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpRequest;
-import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 
 /**
@@ -30,18 +28,18 @@ public class AuthMgr {
 	
 	private String mainpage;
 	
-	private String authApp = "waweb";
-	private AppObject authAppObj=null;
 	
 	private String successFiled="userid";
 	
 	private static Set<String> no_AuthPath;
 	
 	private String not_auth_sufix=null;
-		
-	private GateAuthProvider authProvider;
 	
-	private WebClient webclient;
+	public final App authApp;
+		
+	public final GateAuthProvider authProvider;
+	
+	public final WebClient webclient;
 	
 	
 	/*
@@ -50,18 +48,27 @@ public class AuthMgr {
     "authorisation.url": "/waweb/a/check",
     "auth.app": "waweb"
 	 */
-	public AuthMgr(JsonObject conf){
+	public AuthMgr(JsonObject conf,WebClient client,AppContain app){
 		
 		this.authenticationUrl = conf.getString("authentication");
 		this.authorisationUrl = conf.getString("authorisation");
 		this.mainpage = conf.getString("mainpage");
-		this.authApp = conf.getString("app");
 		this.successFiled = conf.getString("successfield","userid");
+		String authapp = conf.getString("app");
 				
 		String sufix = conf.getString("exclude.end");		
 		String noauthpath = conf.getString("exclude.start");	
 		this.setNotAuthSufix(sufix);
 		this.setNoAuthPath(noauthpath);
+		
+		this.webclient= client;
+		this.authApp = app.getAppInfo(authapp);		
+		
+		this.authenticationUrl = this.authApp.offsetUrl(this.authenticationUrl);
+		this.authorisationUrl = this.authApp.offsetUrl(this.authorisationUrl);
+
+		this.authProvider = new GateAuthProvider(this);
+		
 		
 	}
 	
@@ -90,33 +97,15 @@ public class AuthMgr {
 		
 	}
 	
-	public void init(WebClient client,AppInfo app) {
 
-		this.webclient= client;
-		this.authAppObj = app.getAppInfo(authApp);		
-		
-		this.authenticationUrl = this.authAppObj.offsetUrl(this.authenticationUrl);
-		this.authorisationUrl = this.authAppObj.offsetUrl(this.authorisationUrl);
-
-		this.authProvider = new GateAuthProvider(this);
-
+	public Node authNode(){
+		return this.authApp.getNode(null);
 	}
-
 	
-	public void getJsonResult(String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
+	public void getJsonResult(String uri, JsonObject param, Handler<AsyncResult<JsonObject>> h) {
 		
-		AppObject.Node node = this.authAppObj.getNode(null);		
-		HttpRequest<Buffer> req = this.webclient.get(node.port, node.host, uri);
-		param.forEach(entry -> {
-			req.addQueryParam(entry.getKey(), "" + entry.getValue());
-		});
-
-		req.timeout(5000).send(ar -> {
-			h.handle(ar);			
-		});
-		
-		
-
+		Node node = this.authApp.getNode(null);		
+		node.getJson(this.webclient, uri, param, h);
 	}
 		
 	
@@ -142,13 +131,8 @@ public class AuthMgr {
 	
 	//=====================================================
 
-	public GateAuthProvider getAuthProvider() {
-		return authProvider;
-	}
 
-	public void setAuthProvider(GateAuthProvider authProvider) {
-		this.authProvider = authProvider;
-	}
+
 
 	public String getAuthenticationUrl() {
 		return authenticationUrl;
@@ -170,15 +154,6 @@ public class AuthMgr {
 	}
 
 
-
-
-	public String getAuthApp() {
-		return authApp;
-	}
-	
-	public AppObject getAuthAppObj(){
-		return this.authAppObj;
-	}
 
 
 

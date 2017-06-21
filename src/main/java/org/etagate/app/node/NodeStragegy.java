@@ -1,9 +1,7 @@
-package org.etagate.app;
+package org.etagate.app.node;
 
 import java.util.List;
 import java.util.Optional;
-
-import org.etagate.app.AppObject.Node;
 
 import io.vertx.core.http.HttpServerRequest;
 
@@ -17,5 +15,5 @@ public interface NodeStragegy {
 	
 	public List<Node> nodes();
 	
-	
+			
 }

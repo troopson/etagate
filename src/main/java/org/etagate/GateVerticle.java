@@ -1,6 +1,6 @@
 package org.etagate;
 
-import org.etagate.app.AppInfo;
+import org.etagate.app.AppContain;
 import org.etagate.auth.AuthMgr;
 import org.etagate.auth.GateAuthHandler;
 import org.etagate.conf.GateSetting;
@@ -56,14 +56,13 @@ public class GateVerticle extends AbstractVerticle {
 		this.webroot = conf.getString("static.file.dir");
 		this.upload_dir = conf.getString("upload.dir");
 
-		AppInfo app = GateSetting.appInfo;
+		AppContain appContain = GateSetting.appContain;
 		
 		this.createWebClient();
 		
-		if(GateSetting.hasAuth){
-			authMgr = new AuthMgr(GateSetting.authSetting);
-			authMgr.init(this.webclient,app);
-		}
+		if(GateSetting.hasAuth)
+			authMgr = new AuthMgr(GateSetting.authSetting,this.webclient,appContain);
+				
 		
 		router = Router.router(this.vertx);
 		
@@ -88,7 +87,7 @@ public class GateVerticle extends AbstractVerticle {
 			router.route().handler(authHandler::handle);
 		}
 		
-		AppRoute.addAppRoute(GateSetting.appInfo,webclient,router);
+		AppRoute.addAppRoute(GateSetting.appContain,webclient,router);
 
 		//如果配置了静态文件目录，那么在没有命中前面的route path时，可以直接映射到静态文件目录中去
 		if(webroot!=null){
@@ -121,7 +120,7 @@ public class GateVerticle extends AbstractVerticle {
 		router.route().handler(sessionHandler);
 
 		if(GateSetting.hasAuth){
-			router.route().handler(UserSessionHandler.create(authMgr.getAuthProvider()));
+			router.route().handler(UserSessionHandler.create(authMgr.authProvider));
 		}
 
 	}

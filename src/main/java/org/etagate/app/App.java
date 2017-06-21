@@ -7,6 +7,9 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+import org.etagate.app.node.Node;
+import org.etagate.app.node.NodeStragegy;
+import org.etagate.app.node.RoundNodeStrategy;
 import org.etagate.helper.S;
 
 import io.vertx.core.http.HttpServerRequest;
@@ -15,7 +18,7 @@ import io.vertx.core.http.HttpServerRequest;
  * @author 瞿建军       Email: troopson@163.com
  * 2017年5月16日
  */
-public class AppObject {
+public class App {
 	
 	
 	
@@ -31,11 +34,11 @@ public class AppObject {
 
 	private DevModeSupport devmode=null;
 
-	public AppObject(String name){
+	public App(String name){
 		this(name,null);
 	}
 	
-	public AppObject(String name,NodeStragegy s){
+	public App(String name,NodeStragegy s){
 		this.name=name;
 		if(s==null)
 			this.nodeStrategy = new RoundNodeStrategy();
@@ -46,8 +49,11 @@ public class AppObject {
 	public void addNode(String host, int port, int weight){
 		if(S.isBlank(host))
 			return;
-		
-		this.nodeStrategy.addNode(new Node(host,port,weight));
+		this.nodeStrategy.addNode(this.createNode(host, port, weight));
+	}
+	
+	public Node createNode(String host, int port, int weight){
+		return new Node(this,host,port,weight);
 	}
 	
 	public void addRoutePath(String path){
@@ -105,33 +111,5 @@ public class AppObject {
 	}
 	
 	
-	public class Node {
-		
-		public final String host;
-		public final int port;
-		public final int weight;
-		
-		
-		
-		public Node(String host, int port, int weight){
-			this.host=host;
-			this.port=port;
-			this.weight=weight;
-		}
-		
-		@Override
-		public String toString(){
-			return host+":"+port;
-		}
-		
-
-		@Override
-		public boolean equals(Object n){
-			if(n==null || !(n instanceof Node))
-				return false;
-			Node t =(Node)n;
-			return t.host.equals(host)&& t.port == port;
-		}
-		
-	}
+	
 }

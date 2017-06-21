@@ -5,8 +5,8 @@ package org.etagate.request;
 
 import java.util.Set;
 
-import org.etagate.app.AppInfo;
-import org.etagate.app.AppObject;
+import org.etagate.app.AppContain;
+import org.etagate.app.App;
 import org.etagate.helper.S;
 
 import io.vertx.ext.web.Router;
@@ -19,14 +19,14 @@ import io.vertx.ext.web.client.WebClient;
 public class AppRoute {
 	
 	
-	public static void addAppRoute(AppInfo appInfo, WebClient webclient, Router router){		
+	public static void addAppRoute(AppContain appInfo, WebClient webclient, Router router){		
 		
 		//1. 是否要加auth router
 						
 		//给每个app加上一个默认的匹配路径，app名作为第一级路径名称
 		appInfo.foreach((k,json)->{			
 			
-			AppObject appobj = appInfo.getAppInfo(k);
+			App appobj = appInfo.getAppInfo(k);
 			if(appobj==null)
 				return;
 			
@@ -47,7 +47,7 @@ public class AppRoute {
 	}
 	
 	
-	private static void addRoute(WebClient client, Router router, AppObject appobj, String urlpatten){
+	private static void addRoute(WebClient client, Router router, App appobj, String urlpatten){
 
 		
 		if(S.isBlank(urlpatten))
