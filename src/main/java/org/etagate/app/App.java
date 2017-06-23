@@ -53,7 +53,7 @@ public class App {
 		if(S.isBlank(host))
 			return;
 		Node node = new Node(this,host,port,weight);
-		if(vertx!=null && this.timeout>0 && this.maxfail>0 && this.circuit_reset>0)
+		if(vertx!=null && !this.dev && this.timeout>0 && this.maxfail>0 && this.circuit_reset>0)
 			node.addCircuitBreaker(vertx,timeout, this.maxfail, this.circuit_reset);
 		
 		this.nodeStrategy.addNode(node);
