@@ -41,6 +41,10 @@ public class GateVerticle extends AbstractVerticle {
 	
 	private WebClient webclient;
 	
+	private GateSetting gsetting;
+	
+	
+
 	public void start() throws Exception {
 
 		HttpServerOptions options = new HttpServerOptions();
@@ -56,17 +60,17 @@ public class GateVerticle extends AbstractVerticle {
 		this.webroot = conf.getString("static.file.dir");
 		this.upload_dir = conf.getString("upload.dir");
 
-		AppContain appContain = GateSetting.appContain;
+		AppContain appContain = gsetting.getAppContain();
 		
 		this.createWebClient();
 		
-		if(GateSetting.hasAuth)
-			authMgr = new AuthMgr(GateSetting.authSetting,this.webclient,appContain);
+		if(gsetting.hasAuth())
+			authMgr = new AuthMgr(gsetting.getAuthSetting(),this.webclient,appContain);
 				
 		
 		router = Router.router(this.vertx);
 		
-		this.initRoutes(server);
+		this.initRoutes(server,appContain);
 
 		server.listen(port, ar -> {
 			if (ar.succeeded()) {
@@ -78,16 +82,16 @@ public class GateVerticle extends AbstractVerticle {
 
 	}
 
-	private void initRoutes(HttpServer server) {
+	private void initRoutes(HttpServer server,AppContain appContain) {
 
 		this.addBasicRoute();
 
-		if(GateSetting.hasAuth){
+		if(gsetting.hasAuth()){
 			GateAuthHandler authHandler = new GateAuthHandler(authMgr);
 			router.route().handler(authHandler::handle);
 		}
 		
-		AppRoute.addAppRoute(GateSetting.appContain,webclient,router);
+		AppRoute.addAppRoute(appContain,webclient,router);
 
 		//如果配置了静态文件目录，那么在没有命中前面的route path时，可以直接映射到静态文件目录中去
 		if(webroot!=null){
@@ -119,7 +123,7 @@ public class GateVerticle extends AbstractVerticle {
 		sessionHandler.setNagHttps(false);
 		router.route().handler(sessionHandler);
 
-		if(GateSetting.hasAuth){
+		if(gsetting.hasAuth()){
 			router.route().handler(UserSessionHandler.create(authMgr.authProvider));
 		}
 
@@ -136,6 +140,8 @@ public class GateVerticle extends AbstractVerticle {
 		this.webclient = WebClient.create(vertx,op);
 	}
 
-
+	public void setGsetting(GateSetting gsetting) {
+		this.gsetting = gsetting;
+	}
 
 }

@@ -7,7 +7,9 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -19,6 +21,7 @@ import org.etagate.app.DevModeSupport;
 import org.etagate.app.node.NodeStragegy;
 import org.etagate.helper.S;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -39,13 +42,13 @@ public class GateSetting {
 
 	public static final Logger log = LoggerFactory.getLogger(GateSetting.class);
 
-	public static JsonObject properties=new JsonObject();
-	public static JsonObject authSetting = new JsonObject();
-	public static boolean hasAuth=true;
-	public static AppContain appContain =null;
+	private JsonObject properties=new JsonObject();
+	private JsonObject authSetting = new JsonObject();
+	private boolean hasAuth=true;
+	private AppContain appContain =null;
 	
 			
-	public static void parse(URL is) {
+	public void parse(Vertx vertx,URL is) {
 		SAXReader saxReader = new SAXReader();
 
 		try {
@@ -54,7 +57,7 @@ public class GateSetting {
 			
 			collectProperty(root);
 			parseAuth(root);
-			parseApp(root);
+			parseApp(vertx,root);
 //			
 //			System.out.println("====================parse ok=============");
 //			System.out.println(properties.toString());
@@ -67,7 +70,7 @@ public class GateSetting {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static void collectProperty(Element root){
+	private void collectProperty(Element root){
 		List<Element> nodes = root.elements(PROPERTY_TAG);
 		if(nodes==null)
 			return;
@@ -81,12 +84,8 @@ public class GateSetting {
 	}
 	
 	
-	public static boolean hasAuth(){
-		return hasAuth;
-	}
-	
 	@SuppressWarnings("unchecked")
-	private static void parseAuth(Element root){
+	private void parseAuth(Element root){
 		Element auth = root.element(AUTH_TAG);
 		if(auth==null){
 			hasAuth=false;
@@ -116,7 +115,7 @@ public class GateSetting {
 		
 	}
 	
-	private static void addExcludes(Set<String> set, String def){
+	private void addExcludes(Set<String> set, String def){
 		if(S.isBlank(def))
 			return;
 		String[] ex = def.split(",");
@@ -124,7 +123,7 @@ public class GateSetting {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static void parseApp(Element root){
+	private void parseApp(Vertx vertx,Element root){
 		
 		List<Element> l = root.elements(APP_TAG);
 		// System.out.println("====================here=========="+l.size()+"
@@ -133,14 +132,14 @@ public class GateSetting {
 		
 		l.forEach(app -> {
 			// System.out.println(app.toString());
-			buildAppObject(appContain, app);
+			buildAppObject(vertx,appContain, app);
 		});
 		
 	}
 	
 	
 	@SuppressWarnings("unchecked")
-	private static void buildAppObject(AppContain appinfo, Element appNode) {
+	private void buildAppObject(Vertx vertx,AppContain appinfo, Element appNode) {
 
 		String name = appNode.attributeValue("name");
 
@@ -152,7 +151,11 @@ public class GateSetting {
 		boolean cutname = "true".equalsIgnoreCase(appNode.attributeValue("cutContextPath")) ? true : false;
 		String timeout = appNode.attributeValue("timeout");
 		String dev = appNode.attributeValue("dev");
+		String circuit_maxfail = appNode.attributeValue("maxfail");
+		String circuit_reset = appNode.attributeValue("resetsecond");
 
+//		System.out.println(circuit_maxfail+"  "+circuit_reset);
+		
 		List<Element> nodes = appNode.elements(NODE_TAG);
 		List<Element> include = appNode.elements(INCLUDE_TAG);
 		
@@ -168,17 +171,21 @@ public class GateSetting {
 			a.setTimeout(Long.parseLong(timeout));
 		if("true".equals(dev))
 			a.setDevmode(devmode);
+		if(S.isNotBlank(circuit_maxfail))
+			a.setCircuitMaxfail(Integer.parseInt(circuit_maxfail));
+		if(S.isNotBlank(circuit_reset))
+			a.setCircuitReset(Long.parseLong(circuit_reset)*1000);
 		
 
 		if (nodes != null && !nodes.isEmpty()) {
 			nodes.forEach(n -> {
 				String host = n.attributeValue("host");
 				String port = n.attributeValue("port");
-				String weight = n.attributeValue("weight");
+				String weight = n.attributeValue("weight");				
 				if(S.isBlank(weight))
-					a.addNode(host, Integer.parseInt(port),1);
+					a.addNode(vertx,host, Integer.parseInt(port),1);
 				else
-					a.addNode(host, Integer.parseInt(port), Integer.parseInt(weight));
+					a.addNode(vertx,host, Integer.parseInt(port), Integer.parseInt(weight));
 			});
 		}
 
@@ -194,7 +201,7 @@ public class GateSetting {
 
 	}
 
-	private static NodeStragegy createNodeStrategy(Element appNode) {
+	private NodeStragegy createNodeStrategy(Element appNode) {
 		String nodestrategy = appNode.attributeValue("balanceStrategy");
 		NodeStragegy ns =null;
 		if(S.isNotBlank(nodestrategy)){
@@ -206,6 +213,22 @@ public class GateSetting {
 			}
 		}
 		return ns;
+	}
+	
+	public void eachProperties(Consumer<Entry<String,Object>> action){
+		this.properties.forEach(action);
+	}
+
+	public boolean hasAuth() {
+		return hasAuth;
+	}
+
+	public AppContain getAppContain() {
+		return appContain;
+	}
+
+	public JsonObject getAuthSetting() {
+		return authSetting;
 	}
 
 }

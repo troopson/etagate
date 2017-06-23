@@ -28,14 +28,27 @@ public class RoundNodeStrategy implements NodeStragegy {
 		if(size==1)
 			return node.get(0);
 		
-		int idx = last.getAndIncrement();
+		int times = 0;
+		while(times<size){
+			int idx = last.getAndIncrement();	
+			Node n = null;
+			if(idx>=size){
+				last.set(1);
+				n = node.get(0);
+			}else
+				n = node.get(idx);
+			
+			if(n.isActive())
+				return n;	
+			else
+				times++;
+		}
 		
-		if(idx>=size){
-			last.set(1);
-			return node.get(0);
-		}else
-			return node.get(idx);
+		return node.get(0);
+		
 	}
+
+		
 
 	@Override
 	public void addNode(Node node) {
@@ -43,6 +56,10 @@ public class RoundNodeStrategy implements NodeStragegy {
 		this.size = this.node.size();
 	}
 
+	public int size(){
+		return this.size;
+	}
+	
 	@Override
 	public void delNode(Node node) {
 		this.node.remove(node);

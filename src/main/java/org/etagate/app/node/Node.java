@@ -11,10 +11,14 @@ import org.etagate.app.App;
 import org.etagate.auth.GateUser;
 import org.etagate.conf.Globe;
 
+import io.vertx.circuitbreaker.CircuitBreaker;
+import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
@@ -36,19 +40,55 @@ public class Node {
 	
 	public static final Logger log = LoggerFactory.getLogger(Node.class);
 	
+	private CircuitBreaker breaker;
+	
 	public final String host;
 	public final int port;
 	public final int weight;
+	
+	public final boolean isDev;
 
 	public final App app;
-	
-	private int failtimes=0;
-	
+		
 	public Node(App app,String host, int port, int weight){
+		this(app,host, port, weight,false);
+	}
+	
+	public Node(App app,String host, int port, int weight,boolean isDev){
 		this.host=host;
 		this.port=port;
 		this.weight=weight;
 		this.app = app;
+		this.isDev=isDev;
+		
+	}
+	
+	public void addCircuitBreaker(Vertx vertx, long timeout, int maxfail, long resettimeout){
+		if(this.isDev)
+			throw new IllegalArgumentException("Can't set circuitbreaker for dev node.");
+		
+		breaker = CircuitBreaker.create(app.name+"-"+host+":"+port, vertx,
+				    new CircuitBreakerOptions()
+				        .setMaxFailures(maxfail) // number of failure before opening the circuit
+				        .setTimeout(timeout) // consider a failure if the operation does not succeed in time
+				        .setFallbackOnFailure(false) // do we call the fallback on failure
+				        .setResetTimeout(resettimeout) // time spent in open state before attempting to re-try
+				);
+				
+	}
+	
+	public boolean isActive(){
+		if(this.breaker==null)
+			return true;
+		else if(this.breaker.state()==CircuitBreakerState.OPEN)
+			return false;
+		return true;
+	}
+	
+	public CircuitBreakerState status(){
+		if(this.breaker==null)
+			return null;
+		return breaker.state();
 	}
 	
 	
@@ -58,17 +98,14 @@ public class Node {
 		else
 			System.out.println("mark fail:"+t.getClass());
 		log.error(t);
-		this.failtimes ++;
 	}
 	
-	public int getFailTimes(){
-		return this.failtimes;
-	}
+	
 	
 	
 	@Override
 	public String toString(){
-		return host+":"+port;
+		return host+":"+port+" "+this.weight;
 	}
 	
 
@@ -84,11 +121,22 @@ public class Node {
 	public void get(WebClient http,String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
 
 		HttpRequest<Buffer> req = http.get(this.port,this.host, uri);
-		param.forEach(entry -> {
-			req.addQueryParam(entry.getKey(), "" + entry.getValue());
-		});
-
-		req.timeout(this.app.timeout).send(this.wrap(h));
+		if(param!=null){
+			param.forEach(entry -> {
+				req.addQueryParam(entry.getKey(), "" + entry.getValue());
+			});
+		}
+		
+		this.sendWithBreaker(f->req.timeout(this.app.timeout).send(f), h);
+		
+//		if(this.breaker!=null){
+//			breaker.<HttpResponse<Buffer>>execute(f->{
+//				req.send(f.completer());
+//			}).setHandler(this.wrap(h));	
+//		}else{
+//			req.timeout(this.app.timeout).send(this.wrap(h));
+//		}	
+		
 	}
 	
 	public void getJson(WebClient http,String uri, JsonObject param, Handler<AsyncResult<JsonObject>> h) {
@@ -144,12 +192,32 @@ public class Node {
 			MultiMap query = MultiMap.caseInsensitiveMultiMap();
 			query.addAll(attribute);
 			
-			appRequest.sendForm(query, this.wrap(fu.completer()));
+//			if(this.breaker!=null){
+//				breaker.<HttpResponse<Buffer>>execute(f->{
+//					appRequest.sendForm(query, f.completer());
+//				}).setHandler(this.wrap(fu.completer()));	
+//			}else{
+//				appRequest.sendForm(query, this.wrap(fu.completer()));
+//			}
+			
+			this.sendWithBreaker(f->appRequest.sendForm(query, f), fu.completer());
 			
 		}else{
-			appRequest.sendBuffer(rc.getBody(),this.wrap(fu.completer()));
+						
+//			if(this.breaker!=null){
+//				breaker.<HttpResponse<Buffer>>execute(f->{
+//					appRequest.sendBuffer(rc.getBody(), f.completer());
+//				}).setHandler(this.wrap(fu.completer()));	
+//			}else{
+//				appRequest.sendBuffer(rc.getBody(),this.wrap(fu.completer()));
+//			}
+			
+			this.sendWithBreaker(f->appRequest.sendBuffer(rc.getBody(), f), fu.completer());
 			
 		}
+		
+		if(this.breaker!=null)
+			System.out.println("circuit breaker:"+this.status().name());
 		
 		log.info("request:" + app.name + "  method:" + method + "   http://" + this.host + ":"
 				+ this.port + uri);
@@ -160,10 +228,25 @@ public class Node {
 	
 	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(Handler<AsyncResult<HttpResponse<Buffer>>> h){
 		return res->{
-			if(!res.succeeded())
+			if(!res.succeeded()){
+				
 				Node.this.markFail(res.cause());
-			 h.handle(res);
+			}
+			h.handle(res);
 		};			
+	}
+	
+	private void sendWithBreaker(Handler<Handler<AsyncResult<HttpResponse<Buffer>>>> dorequest,Handler<AsyncResult<HttpResponse<Buffer>>> handler){
+
+		if(this.breaker!=null){
+			breaker.<HttpResponse<Buffer>>execute(f->{
+				dorequest.handle(f.completer());
+				//appRequest.sendBuffer(rc.getBody(), this.wrap(f.completer()));
+			}).setHandler(this.wrap(handler));	
+		}else{
+			dorequest.handle(this.wrap(handler));
+			//appRequest.sendBuffer(rc.getBody(),this.wrap(fu.completer()));
+		}
 	}
 	
 	private JsonObject fileToJson(FileUpload fu){

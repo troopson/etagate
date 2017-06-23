@@ -41,7 +41,7 @@ jar.dependsOn += addDependToManifest
 jar.dependsOn += copyJars
 
 ext {
-  vertxVersion = "3.4.0"
+  vertxVersion = "3.4.2"
 }
 
 
@@ -61,6 +61,7 @@ dependencies {
 	 compile "io.vertx:vertx-web-client:$vertxVersion"
 	 compile "io.vertx:vertx-zookeeper:$vertxVersion"
 	 compile "io.vertx:vertx-auth-common:$vertxVersion"
+	 compile "io.vertx:vertx-circuit-breaker:$vertxVersion"
 	 
 	 compile group: 'dom4j', name: 'dom4j', version: '1.6.1'	 
 	 

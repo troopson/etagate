@@ -32,22 +32,27 @@ public class MainApp extends AbstractVerticle {
 	
 		URL u = this.findgfile();
 		
-		vertx.executeBlocking(v->{
-			GateSetting.parse(u);
-			v.complete();
+		vertx.<GateSetting>executeBlocking(v->{
+			GateSetting gs = new GateSetting();
+			gs.parse(vertx,u);
+			v.complete(gs);
 		}, r->{
 			if(r.succeeded()){
+				GateSetting gs = r.result();
 				JsonObject conf = config();
-				GateSetting.properties.forEach(e->{
+				gs.eachProperties(e->{
 					conf.put(e.getKey(), e.getValue());
 				});
 				
 				int instance = Integer.parseInt(conf.getString("server.instance","1"));
 				
-				DeploymentOptions voptions = new DeploymentOptions().setInstances(instance);				
+				DeploymentOptions voptions = new DeploymentOptions();				
 				voptions.setConfig(conf);
-				vertx.deployVerticle(GateVerticle.class.getName(), voptions);
-				
+				for(int i=0;i<instance;i++){
+					GateVerticle gv = new GateVerticle();
+					gv.setGsetting(gs);
+				    vertx.deployVerticle(gv, voptions);
+				}				
 				
 			}else{
 				r.cause().printStackTrace();	

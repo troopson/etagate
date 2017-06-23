@@ -12,8 +12,12 @@ public interface NodeStragegy {
 	public void delNode(Node node);
 		
 	public Node getNode(Optional<HttpServerRequest> clientRequest);
-	
+		
 	public List<Node> nodes();
+	
+	public int size();
+	
+	
 	
 			
 }

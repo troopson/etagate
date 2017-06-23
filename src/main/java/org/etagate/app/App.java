@@ -12,6 +12,7 @@ import org.etagate.app.node.NodeStragegy;
 import org.etagate.app.node.RoundNodeStrategy;
 import org.etagate.helper.S;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerRequest;
 
 /**
@@ -21,10 +22,9 @@ import io.vertx.core.http.HttpServerRequest;
 public class App {
 	
 	
-	
 	public String name;
 	public boolean cut_appName=true;
-	public long timeout=5000;
+	public long timeout=1000;
 	
 	private boolean dev=false;
 
@@ -33,6 +33,9 @@ public class App {
 	private NodeStragegy nodeStrategy  = null;
 
 	private DevModeSupport devmode=null;
+	
+	private int maxfail=-1; 
+	private long circuit_reset=-1;
 
 	public App(String name){
 		this(name,null);
@@ -46,14 +49,18 @@ public class App {
 			this.nodeStrategy = s;
 	}
 		
-	public void addNode(String host, int port, int weight){
+	public void addNode(Vertx vertx,String host, int port, int weight){
 		if(S.isBlank(host))
 			return;
-		this.nodeStrategy.addNode(this.createNode(host, port, weight));
+		Node node = new Node(this,host,port,weight);
+		if(vertx!=null && this.timeout>0 && this.maxfail>0 && this.circuit_reset>0)
+			node.addCircuitBreaker(vertx,timeout, this.maxfail, this.circuit_reset);
+		
+		this.nodeStrategy.addNode(node);
 	}
 	
-	public Node createNode(String host, int port, int weight){
-		return new Node(this,host,port,weight);
+	public Node createDevNode(String host, int port, int weight){
+		return new Node(this,host,port,weight,true);
 	}
 	
 	public void addRoutePath(String path){
@@ -101,13 +108,34 @@ public class App {
 			if(n!=null)
 				return n;
 		}
-		return nodeStrategy.getNode(Optional.ofNullable(clientRequest));
+		return  nodeStrategy.getNode(Optional.ofNullable(clientRequest));
+				
 	}
+	
+//	public Node nextNode(){
+//		
+//	}
 	
 	
 
 	public String toString(){
 		return name+"  "+nodeStrategy.nodes()+"  cut:"+this.cut_appName+"   timeout:"+this.timeout;
+	}
+
+	public int getMaxfail() {
+		return maxfail;
+	}
+
+	public void setCircuitMaxfail(int circuit_maxfail) {
+		this.maxfail = circuit_maxfail;
+	}
+
+	public long getCircuitReset() {
+		return circuit_reset;
+	}
+
+	public void setCircuitReset(long circuit_reset) {
+		this.circuit_reset = circuit_reset;
 	}
 	
 	

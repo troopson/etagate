@@ -33,7 +33,7 @@ public class DevModeSupport {
 				return null;
 			}else{
 				String[] ipp = hostport.split(":");
-				Node n = app.createNode(ipp[0], Integer.parseInt(ipp[1]),1);
+				Node n = app.createDevNode(ipp[0], Integer.parseInt(ipp[1]),1);
 				devMode.put(remoteip, n);
 				log.debug("remote ip visit setting:"+remoteip+" ["+app.name+"->"+hostport+"]");
 				return n;
