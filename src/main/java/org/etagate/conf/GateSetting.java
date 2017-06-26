@@ -47,6 +47,8 @@ public class GateSetting {
 	private boolean hasAuth=true;
 	private AppContain appContain =null;
 	
+
+	
 			
 	public void parse(Vertx vertx,URL is) {
 		SAXReader saxReader = new SAXReader();
@@ -77,7 +79,7 @@ public class GateSetting {
 		nodes.forEach(e->{
 			String name = e.attributeValue("name");
 			if(S.isBlank(name))
-				return;
+				return;			
 			String v = e.getStringValue();
 			properties.put(name.trim(), v.trim());
 		});

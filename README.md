@@ -20,6 +20,8 @@
 
 + 支持开发状态下动态指定服务的ip和端口
 
++ 支持外部访问请求的SSL设置
+
   ​
 
 
@@ -39,7 +41,11 @@
    <property name="upload.dir">data/upload</property>
    <!--启动的实例个数，默认为1个，建议与处理器个数相同-->
    <property name="server.instance">2</property>
-   
+  
+   <!--如果需要启用SSL访问，可以配置如下两个属性，不配置不启用，etagate采用java keytool工具管理证书-->
+   <!--property name="ssl.keystore">/keys/etagate.keystore</property-->
+   <!--property name="ssl.keystore.pass">123456</property-->
+  
    <!--
     权限和访问控制的内容，gate网关会将所有的权限校验和访问控制转发给对应的app进行处理
     app: 完成auth相关功能的app名称，需要在下面的app定义中进行定义

@@ -6,10 +6,13 @@
    <property name="static.file.dir">D:/source/phoenix/etagate/html</property> 
     <!--上传文件后，保存的目录，目前暂时只能保存，微服务应用还不能获取到文件-->
    <property name="upload.dir">d:/temp</property>
-  
+   
    <property name="server.instance">4</property>
    <!-- property name="bind.internal.ip">4</property-->
    <!-- property name="bind.internal.port">4</property-->
+   
+   <!-- property name="ssl.keystore">d:/source/keys/etagate.keystore</property-->
+   <!-- property name="ssl.keystore.pass">123456</property-->
    
    <!--
     权限和访问控制的内容，gate网关会将所有的权限校验和访问控制转发给对应的app进行处理
@@ -21,7 +24,7 @@
    -->
    <!-- auth app="xtgl" authentication="/weblogin" authorisation="/checkpermission" mainpage= "/xtgl/sys/user/index" successfield="no">
       <exclude end="*.bmp,*.gif,*.jpg,*.png,*.woff,*.woff2,*.css,*.js,*.ico" />
-      <exclude start="/flume/,/flume2/,/login,/logout" />      
+      <exclude start="/login,/logout" />      
    </auth-->
    
    <auth app="auth" authentication="/auth/login" authorisation="/auth/checkpermission" mainpage= "/auth/mainpage" successfield="userid">

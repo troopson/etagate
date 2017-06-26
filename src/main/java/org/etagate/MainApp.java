@@ -30,7 +30,10 @@ public class MainApp extends AbstractVerticle {
 	
 	public void start() throws Exception {
 	
-		URL u = this.findgfile();
+		String[] args =vertx.getOrCreateContext().processArgs().toArray(new String[]{});			
+		Args argsObj =new Args(args);
+		
+		URL u = this.findgfile(argsObj);				
 		
 		vertx.<GateSetting>executeBlocking(v->{
 			GateSetting gs = new GateSetting();
@@ -65,17 +68,15 @@ public class MainApp extends AbstractVerticle {
 	}
 	
 	
-	private URL findgfile() throws MalformedURLException{
+	private URL findgfile(Args argsObj) throws MalformedURLException{
 		
 		JsonObject conf = config();
 		String routeConf = conf.getString("gfile");
 		URL u = null;
 		
-		if(S.isBlank(routeConf)){
-			String[] args =vertx.getOrCreateContext().processArgs().toArray(new String[]{});			
-			Args argsObj =new Args(args);
+		if(S.isBlank(routeConf))			
 			routeConf = argsObj.get("gfile");
-		}
+		
 		
 		if(S.isBlank(routeConf)){
 			u = MainApp.class.getResource("gfile");

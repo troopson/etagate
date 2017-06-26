@@ -4,6 +4,7 @@ import org.etagate.app.AppContain;
 import org.etagate.auth.AuthMgr;
 import org.etagate.auth.GateAuthHandler;
 import org.etagate.conf.GateSetting;
+import org.etagate.helper.S;
 import org.etagate.request.AppRoute;
 
 import io.vertx.core.AbstractVerticle;
@@ -12,6 +13,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.JksOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -47,11 +49,22 @@ public class GateVerticle extends AbstractVerticle {
 
 	public void start() throws Exception {
 
+		JsonObject conf = vertx.getOrCreateContext().config();
+		
+		String ssl_keystore= conf.getString("ssl.keystore");
+		String keystore_pass = conf.getString("ssl.keystore.pass");
+		
 		HttpServerOptions options = new HttpServerOptions();
 		options.setCompressionSupported(true);
+		
+		if(S.isNotBlank(ssl_keystore) && S.isNotBlank(keystore_pass)){
+			options.setSsl(true).setKeyStoreOptions(
+					new JksOptions().setPath(ssl_keystore).setPassword(keystore_pass));
+		}		
+		
 		HttpServer server = vertx.createHttpServer(options);
 
-		JsonObject conf = vertx.getOrCreateContext().config();
+		
 		
 		int port = Integer.parseInt(conf.getString("port", "80"));
 
