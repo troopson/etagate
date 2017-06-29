@@ -13,6 +13,8 @@
    
    <!-- property name="ssl.keystore">d:/source/keys/etagate.keystore</property-->
    <!-- property name="ssl.keystore.pass">123456</property-->
+   <!-- property name="ssl.client.keystore">d:/source/keys/client.keystore</property-->
+   <!-- property name="ssl.client.keystore.pass">123456</property-->
    
    <!--
     权限和访问控制的内容，gate网关会将所有的权限校验和访问控制转发给对应的app进行处理
@@ -42,6 +44,7 @@
    </app>
    <app name="auth" cutContextPath="false" timeout="3000" maxfail="5" resetsecond="10000">
       <node host="127.0.0.1" port="8080"/>
+      <node host="172.21.9.26" port="8080"/>
    </app>
    <app name="eventpersist" cutContextPath="true" timeout="3000" maxfail="5" resetsecond="10000">
       <node host="127.0.0.1" port="7777"/>

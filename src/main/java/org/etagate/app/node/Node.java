@@ -163,8 +163,8 @@ public class Node {
 		MultiMap cheads = clientRequest.headers();		
 		MultiMap heads = appRequest.headers();
 		heads.addAll(cheads);
-		heads.remove("Host");
-		heads.add("Host", this.host + ":" + this.port);
+//		heads.remove("Host");
+//		heads.add("Host", this.host + ":" + this.port);
 		
 		heads.remove(Globe.GATE_PRINCIPAL);
 //		System.out.println("==============="+user.principal().encode());
@@ -215,11 +215,8 @@ public class Node {
 			this.sendWithBreaker(f->appRequest.sendBuffer(rc.getBody(), f), fu.completer());
 			
 		}
-		
-		if(this.breaker!=null)
-			System.out.println("circuit breaker:"+this.status().name());
-		
-		log.info("request:" + app.name + "  method:" + method + "   http://" + this.host + ":"
+		if(log.isInfoEnabled())
+			log.info("request:" + app.name + "  method:" + method + "   http://" + this.host + ":"
 				+ this.port + uri);
 		
 		return fu;

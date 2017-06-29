@@ -77,7 +77,6 @@ public class RequestHandler implements Handler<RoutingContext> {
 			if ("Location".equalsIgnoreCase(k) && S.isNotBlank(v)) {
 				String schemal = clientRequest.scheme();
 				String host = clientRequest.host();
-				log.debug(v + "===>" + v.replaceAll(HTTP_SCHEMAL_HOST_REG, schemal + "://" + host + "/"));
 				clientResponse.putHeader("Location", v.replaceAll(HTTP_SCHEMAL_HOST_REG, schemal + "://" + host + "/"));
 			} else
 				clientResponse.putHeader(k, v);

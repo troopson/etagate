@@ -1,10 +1,7 @@
 package org.etagate.app;
 
 import org.etagate.app.node.Node;
-import org.junit.Assert;
-import org.junit.Test;
 
-import io.vertx.circuitbreaker.CircuitBreakerState;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;

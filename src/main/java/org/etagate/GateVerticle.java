@@ -8,6 +8,7 @@ import org.etagate.helper.S;
 import org.etagate.request.AppRoute;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
@@ -51,16 +52,7 @@ public class GateVerticle extends AbstractVerticle {
 
 		JsonObject conf = vertx.getOrCreateContext().config();
 		
-		String ssl_keystore= conf.getString("ssl.keystore");
-		String keystore_pass = conf.getString("ssl.keystore.pass");
-		
-		HttpServerOptions options = new HttpServerOptions();
-		options.setCompressionSupported(true);
-		
-		if(S.isNotBlank(ssl_keystore) && S.isNotBlank(keystore_pass)){
-			options.setSsl(true).setKeyStoreOptions(
-					new JksOptions().setPath(ssl_keystore).setPassword(keystore_pass));
-		}		
+		HttpServerOptions options = this.configSSL(conf);		
 		
 		HttpServer server = vertx.createHttpServer(options);
 
@@ -156,5 +148,28 @@ public class GateVerticle extends AbstractVerticle {
 	public void setGsetting(GateSetting gsetting) {
 		this.gsetting = gsetting;
 	}
+	
+
+	private HttpServerOptions configSSL(JsonObject conf) {
+		String ssl_keystore= conf.getString("ssl.keystore");
+		String keystore_pass = conf.getString("ssl.keystore.pass");
+
+		String ssl_client_keystore= conf.getString("ssl.client.keystore");
+		String client_keystore_pass = conf.getString("ssl.client.keystore.pass");		
+		
+		HttpServerOptions options = new HttpServerOptions();
+		options.setCompressionSupported(true);
+		
+		if(S.isNotBlank(ssl_keystore) && S.isNotBlank(keystore_pass)){
+			options.setSsl(true).setKeyStoreOptions(
+					new JksOptions().setPath(ssl_keystore).setPassword(keystore_pass));
+			
+			if(S.isNotBlank(ssl_client_keystore) && S.isNotBlank(client_keystore_pass))
+				options.setClientAuth(ClientAuth.REQUIRED).setTrustStoreOptions(
+				    new JksOptions().setPath(ssl_client_keystore).setPassword(client_keystore_pass));
+		}
+		return options;
+	}
+
 
 }
