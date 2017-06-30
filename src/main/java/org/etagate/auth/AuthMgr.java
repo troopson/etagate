@@ -59,7 +59,7 @@ public class AuthMgr {
 		String sufix = conf.getString("exclude.end");		
 		String noauthpath = conf.getString("exclude.start");	
 		this.setNotAuthSufix(sufix);
-		this.setNoAuthPath(noauthpath);
+		this.setNoAuthPaths(noauthpath);
 		
 		this.webclient= client;
 		this.authApp = app.getAppInfo(authapp);		
@@ -72,20 +72,25 @@ public class AuthMgr {
 		
 	}
 	
+	public void addNoAuthPath(String path){
+		if(no_AuthPath==null)
+			no_AuthPath = new HashSet<>();
+		
+		no_AuthPath.add(path.trim());
+	}
 	
-	public void setNoAuthPath(String noauth){
+	private void setNoAuthPaths(String noauth){
 		if(S.isBlank(noauth))
 			return;
 			
 		String[] s = noauth.split(",");
 		
-		no_AuthPath = new HashSet<>();
 		for(String a : s)
-			no_AuthPath.add(a.trim());
+			this.addNoAuthPath(a);
 		
 	}
 	
-	public void setNotAuthSufix(String sufix){
+	private void setNotAuthSufix(String sufix){
 		//*.bmp|*.gif|*.jpg|*.png|*.woff|*.css|*.js
 		//[a-zA-Z0-9:/\.]*(\.bmp|\.gif|\.jpg|\.png|\.woff|\.css|\.js)($|\?.*)
 		

@@ -8,6 +8,9 @@
    <property name="upload.dir">d:/temp</property>
    
    <property name="server.instance">4</property>
+   
+    <property name="index.page">/auth/mainpage</property>
+   
    <!-- property name="bind.internal.ip">4</property-->
    <!-- property name="bind.internal.port">4</property-->
    

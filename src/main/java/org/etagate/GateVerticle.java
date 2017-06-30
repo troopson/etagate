@@ -4,6 +4,7 @@ import org.etagate.app.AppContain;
 import org.etagate.auth.AuthMgr;
 import org.etagate.auth.GateAuthHandler;
 import org.etagate.conf.GateSetting;
+import org.etagate.helper.RequestHelper;
 import org.etagate.helper.S;
 import org.etagate.request.AppRoute;
 
@@ -71,11 +72,10 @@ public class GateVerticle extends AbstractVerticle {
 		
 		if(gsetting.hasAuth())
 			authMgr = new AuthMgr(gsetting.getAuthSetting(),this.webclient,appContain);
-				
-		
-		router = Router.router(this.vertx);
-		
-		this.initRoutes(server,appContain);
+
+		String index_page = conf.getString("index.page");
+		router = Router.router(this.vertx);		
+		this.initRoutes(server,appContain,index_page);
 
 		server.listen(port, ar -> {
 			if (ar.succeeded()) {
@@ -87,8 +87,11 @@ public class GateVerticle extends AbstractVerticle {
 
 	}
 
-	private void initRoutes(HttpServer server,AppContain appContain) {
+	private void initRoutes(HttpServer server,AppContain appContain, String indexPage) {
 
+		if(S.isNotBlank(indexPage))
+			router.route("/").handler(r->{RequestHelper.redirect(r.request(), indexPage).end();});
+		
 		this.addBasicRoute();
 
 		if(gsetting.hasAuth()){
@@ -103,6 +106,8 @@ public class GateVerticle extends AbstractVerticle {
 			StaticHandler sta = StaticHandler.create(webroot);
 			router.route().handler(sta);
 		}
+		
+		
 		
 		server.requestHandler(router::accept);
 

@@ -3,6 +3,8 @@
  */
 package org.etagate.auth;
 
+import org.etagate.helper.RequestHelper;
+
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
@@ -15,6 +17,7 @@ import io.vertx.ext.web.handler.impl.AuthHandlerImpl;
  * @author 瞿建军 Email: troopson@163.com 2017年5月17日
  */
 public class GateAuthHandler extends AuthHandlerImpl {
+	
 	
 	private final AuthMgr authMgr;
 
@@ -64,11 +67,7 @@ public class GateAuthHandler extends AuthHandlerImpl {
 						if(s==null)
 							s=this.authMgr.getMainPage();
 						if(s!=null){
-							String mainpage=request.absoluteURI().replace(request.uri(), "")+s;
-							System.out.println(request.absoluteURI()+"   "+request.uri()+"   "+request.path()+"   "+mainpage);
-							clientResponse.putHeader("Content-Type", "text/html;charset=utf-8");
-							clientResponse.putHeader("Location", mainpage);
-							clientResponse.setStatusCode(302);
+							RequestHelper.redirect(request, clientResponse, s);
 						}else{
 							clientResponse.setStatusCode(200);
 						}						
