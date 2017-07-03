@@ -3,9 +3,9 @@
  */
 package org.etagate.app.node;
 
-import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.etagate.app.App;
 import org.etagate.auth.GateUser;
@@ -50,6 +50,9 @@ public class Node {
 
 	public final App app;
 		
+	private AtomicInteger failTimes=new AtomicInteger(0);
+	private boolean gtMaxFail=false;
+		
 	public Node(App app,String host, int port, int weight){
 		this(app,host, port, weight,false);
 	}
@@ -60,6 +63,7 @@ public class Node {
 		this.weight=weight;
 		this.app = app;
 		this.isDev=isDev;
+		
 		
 	}
 	
@@ -77,10 +81,13 @@ public class Node {
 				
 	}
 	
+	//如果有断路器，那么返回断路器的状态，
+	//如果没有，按照最大失败次数的设置，超过最大失败次数，返回false
+	//如果没有设置最大失败次数，那么始终返回true
 	public boolean isActive(){
-		if(this.breaker==null)
-			return true;
-		else if(this.breaker.state()==CircuitBreakerState.OPEN)
+		if(this.breaker==null){			
+			return !this.gtMaxFail;
+		}else if(this.breaker.state()==CircuitBreakerState.OPEN)
 			return false;
 		return true;
 	}
@@ -93,11 +100,20 @@ public class Node {
 	
 	
 	private void markFail(Throwable t){
-		if(t instanceof java.util.concurrent.TimeoutException)
-			System.out.println("mark timeout error");
-		else
-			System.out.println("mark fail:"+t.getClass());
+		
+		int failed = failTimes.incrementAndGet();
+		int maxFail = app.getMaxfail();
+		if(maxFail>0 && failed>maxFail)
+			gtMaxFail=true;
+		
+		if(log.isInfoEnabled()){
+			if(t instanceof java.util.concurrent.TimeoutException)
+				log.info("timeout error. "+this.toString());
+			else
+				log.info("fail:"+t.getClass()+"  "+this.toString());		
+		}
 		log.error(t);
+		
 	}
 	
 	
@@ -105,7 +121,7 @@ public class Node {
 	
 	@Override
 	public String toString(){
-		return host+":"+port+" "+this.weight;
+		return host+":"+port+"("+this.weight+")  failed times:"+failTimes.get();
 	}
 	
 
@@ -128,15 +144,7 @@ public class Node {
 		}
 		
 		this.sendWithBreaker(f->req.timeout(this.app.timeout).send(f), h);
-		
-//		if(this.breaker!=null){
-//			breaker.<HttpResponse<Buffer>>execute(f->{
-//				req.send(f.completer());
-//			}).setHandler(this.wrap(h));	
-//		}else{
-//			req.timeout(this.app.timeout).send(this.wrap(h));
-//		}	
-		
+				
 	}
 	
 	public void getJson(WebClient http,String uri, JsonObject param, Handler<AsyncResult<JsonObject>> h) {
@@ -147,7 +155,7 @@ public class Node {
 				h.handle(Future.succeededFuture(u));
 			}else{
 				h.handle(Future.failedFuture(ar.cause()));
-			}			
+			}	
 		});
 
 	}
@@ -170,18 +178,17 @@ public class Node {
 //		System.out.println("==============="+user.principal().encode());
 		GateUser user = (GateUser)rc.user();
 		if (user != null)
-			try {
-				heads.add(Globe.GATE_PRINCIPAL, new String(user.principal().encode().getBytes("UTF-8"),"ISO8859-1"));
-			} catch (UnsupportedEncodingException e) {}
+			heads.add(Globe.GATE_PRINCIPAL, user.principalString());
 		
-		
-		Set<FileUpload> up = rc.fileUploads();
-		if(up!=null && !up.isEmpty()){
-			Set<String> upfiles = new HashSet<>();
-			up.forEach(f->{
-				upfiles.add(this.fileToJson(f).encode());
-			});
-			appRequest.addQueryParam("_upload_files_", Json.encode(upfiles));
+		if(method == HttpMethod.POST){
+			Set<FileUpload> up = rc.fileUploads();
+			if(up!=null && !up.isEmpty()){		
+				Set<String> upfiles = new HashSet<>();
+				up.forEach(f->{
+					upfiles.add(this.fileToJson(f).encode());
+				});
+				appRequest.addQueryParam("_upload_files_", Json.encode(upfiles));	
+			}
 		}
 		
 		Future<HttpResponse<Buffer>> fu = Future.future();
@@ -192,27 +199,15 @@ public class Node {
 			MultiMap query = MultiMap.caseInsensitiveMultiMap();
 			query.addAll(attribute);
 			
-//			if(this.breaker!=null){
-//				breaker.<HttpResponse<Buffer>>execute(f->{
-//					appRequest.sendForm(query, f.completer());
-//				}).setHandler(this.wrap(fu.completer()));	
-//			}else{
-//				appRequest.sendForm(query, this.wrap(fu.completer()));
-//			}
 			
 			this.sendWithBreaker(f->appRequest.sendForm(query, f), fu.completer());
 			
 		}else{
-						
-//			if(this.breaker!=null){
-//				breaker.<HttpResponse<Buffer>>execute(f->{
-//					appRequest.sendBuffer(rc.getBody(), f.completer());
-//				}).setHandler(this.wrap(fu.completer()));	
-//			}else{
-//				appRequest.sendBuffer(rc.getBody(),this.wrap(fu.completer()));
-//			}
-			
-			this.sendWithBreaker(f->appRequest.sendBuffer(rc.getBody(), f), fu.completer());
+			Buffer body = rc.getBody();
+			if(body.length()<=0)
+				this.sendWithBreaker(f->appRequest.send(f), fu.completer());
+			else
+			    this.sendWithBreaker(f->appRequest.sendBuffer(body, f), fu.completer());
 			
 		}
 		if(log.isInfoEnabled())
@@ -223,16 +218,7 @@ public class Node {
 		
 	}
 	
-	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(Handler<AsyncResult<HttpResponse<Buffer>>> h){
-		return res->{
-			if(!res.succeeded()){
-				
-				Node.this.markFail(res.cause());
-			}
-			h.handle(res);
-		};			
-	}
-	
+
 	private void sendWithBreaker(Handler<Handler<AsyncResult<HttpResponse<Buffer>>>> dorequest,Handler<AsyncResult<HttpResponse<Buffer>>> handler){
 
 		if(this.breaker!=null){
@@ -246,6 +232,17 @@ public class Node {
 		}
 	}
 	
+	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(Handler<AsyncResult<HttpResponse<Buffer>>> h){
+		return res->{			
+			
+			if(!res.succeeded()){
+				
+				Node.this.markFail(res.cause());
+			}
+			h.handle(res);
+		};			
+	}
+		
 	private JsonObject fileToJson(FileUpload fu){
 		JsonObject j =new JsonObject();
 		j.put("name",fu.name());

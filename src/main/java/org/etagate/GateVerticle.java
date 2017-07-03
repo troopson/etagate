@@ -75,7 +75,7 @@ public class GateVerticle extends AbstractVerticle {
 
 		String index_page = conf.getString("index.page");
 		router = Router.router(this.vertx);		
-		this.initRoutes(server,appContain,index_page);
+		this.initRoutes(conf,server,appContain,index_page);
 
 		server.listen(port, ar -> {
 			if (ar.succeeded()) {
@@ -87,12 +87,12 @@ public class GateVerticle extends AbstractVerticle {
 
 	}
 
-	private void initRoutes(HttpServer server,AppContain appContain, String indexPage) {
+	private void initRoutes(JsonObject conf,HttpServer server,AppContain appContain, String indexPage) {
 
 		if(S.isNotBlank(indexPage))
 			router.route("/").handler(r->{RequestHelper.redirect(r.request(), indexPage).end();});
 		
-		this.addBasicRoute();
+		this.addBasicRoute(conf);
 
 		if(gsetting.hasAuth()){
 			GateAuthHandler authHandler = new GateAuthHandler(authMgr);
@@ -115,7 +115,7 @@ public class GateVerticle extends AbstractVerticle {
 
 	public static final String SessionName="web.session";
 	
-	private void addBasicRoute() {
+	private void addBasicRoute(JsonObject conf) {
 		router.route().handler(CookieHandler.create());
 
 		BodyHandler bh = BodyHandler.create();
@@ -128,9 +128,14 @@ public class GateVerticle extends AbstractVerticle {
 		if (vertx.isClustered())
 			sessionStore = ClusteredSessionStore.create(vertx,SessionName);
 		else
-			sessionStore = LocalSessionStore.create(vertx,SessionName);
+			sessionStore = LocalSessionStore.create(vertx,SessionName);		
+		
 		SessionHandler sessionHandler = SessionHandler.create(sessionStore);
-		sessionHandler.setNagHttps(false);
+		sessionHandler.setNagHttps(false).setCookieHttpOnlyFlag(true);
+		Long sessionTimeount = conf.getLong("session.timeout");
+		if(sessionTimeount!=null && sessionTimeount>0)
+			sessionHandler.setSessionTimeout(sessionTimeount);
+		
 		router.route().handler(sessionHandler);
 
 		if(gsetting.hasAuth()){

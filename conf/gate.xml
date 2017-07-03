@@ -11,8 +11,10 @@
    
     <property name="index.page">/auth/mainpage</property>
    
-   <!-- property name="bind.internal.ip">4</property-->
-   <!-- property name="bind.internal.port">4</property-->
+   <property name="bind.internal.ip">172.18.7.20</property>
+   <property name="bind.internal.port">8999</property>
+   
+   <!-- property name="session.timeout"></property-->
    
    <!-- property name="ssl.keystore">d:/source/keys/etagate.keystore</property-->
    <!-- property name="ssl.keystore.pass">123456</property-->

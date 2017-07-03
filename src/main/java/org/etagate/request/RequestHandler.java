@@ -82,11 +82,13 @@ public class RequestHandler implements Handler<RoutingContext> {
 				clientResponse.putHeader(k, v);
 		});
 
-		clientResponse.putHeader("Content-Length",""+appResponse.body().length());
+		clientResponse.setChunked(true);
+//		clientResponse.putHeader("Content-Length",""+appResponse.body().length());
 		
 //		String s =appResponse.bodyAsString();
 //		System.out.println(s);
-		clientResponse.write(appResponse.body());
+		clientResponse.write(appResponse.bodyAsBuffer());
+		
 	}
 
 }

@@ -3,6 +3,8 @@
  */
 package org.etagate.auth;
 
+import java.io.UnsupportedEncodingException;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -17,10 +19,17 @@ import io.vertx.ext.auth.User;
 public class GateUser extends AbstractUser {
 
 	private JsonObject principal = null;
+	
+	private transient String principalString=null;
 
 	public GateUser(JsonObject json) {
 
 		this.principal = json;
+		try {
+			this.principalString = new String(json.encode().getBytes("UTF-8"),"ISO8859-1");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 
 	}
 
@@ -61,6 +70,10 @@ public class GateUser extends AbstractUser {
 	@Override
 	public JsonObject principal() {
 		return principal;
+	}
+	
+	public String principalString(){
+		return this.principalString;
 	}
 
 	public String getAttr(String key) {

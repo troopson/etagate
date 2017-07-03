@@ -111,12 +111,7 @@ public class App {
 		return  nodeStrategy.getNode(Optional.ofNullable(clientRequest));
 				
 	}
-	
-//	public Node nextNode(){
-//		
-//	}
-	
-	
+
 
 	public String toString(){
 		return name+"  "+nodeStrategy.nodes()+"  cut:"+this.cut_appName+"   timeout:"+this.timeout;
