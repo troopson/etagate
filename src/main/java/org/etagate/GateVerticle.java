@@ -94,10 +94,7 @@ public class GateVerticle extends AbstractVerticle {
 		
 		this.addBasicRoute(conf);
 
-		if(gsetting.hasAuth()){
-			GateAuthHandler authHandler = new GateAuthHandler(authMgr);
-			router.route().handler(authHandler::handle);
-		}
+		
 		
 		AppRoute.addAppRoute(appContain,webclient,router);
 
@@ -113,7 +110,7 @@ public class GateVerticle extends AbstractVerticle {
 
 	}
 
-	public static final String SessionName="web.session";
+	public static final String SessionName="_SESSID";
 	
 	private void addBasicRoute(JsonObject conf) {
 		router.route().handler(CookieHandler.create());
@@ -124,22 +121,29 @@ public class GateVerticle extends AbstractVerticle {
 		// bh.setDeleteUploadedFilesOnEnd(false);
 		router.route().handler(bh);
 
-		SessionStore sessionStore = null;
-		if (vertx.isClustered())
-			sessionStore = ClusteredSessionStore.create(vertx,SessionName);
-		else
-			sessionStore = LocalSessionStore.create(vertx,SessionName);		
-		
-		SessionHandler sessionHandler = SessionHandler.create(sessionStore);
-		sessionHandler.setNagHttps(false).setCookieHttpOnlyFlag(true);
-		Long sessionTimeount = conf.getLong("session.timeout");
-		if(sessionTimeount!=null && sessionTimeount>0)
-			sessionHandler.setSessionTimeout(sessionTimeount);
-		
-		router.route().handler(sessionHandler);
-
-		if(gsetting.hasAuth()){
-			router.route().handler(UserSessionHandler.create(authMgr.authProvider));
+		String hasSession = conf.getString("session","true");
+		if("true".equals(hasSession)){		
+			SessionStore sessionStore = null;
+			if (vertx.isClustered())
+				sessionStore = ClusteredSessionStore.create(vertx,SessionName);
+			else
+				sessionStore = LocalSessionStore.create(vertx,SessionName);		
+			
+			SessionHandler sessionHandler = SessionHandler.create(sessionStore);
+			sessionHandler.setNagHttps(false).setCookieHttpOnlyFlag(true);
+			Long sessionTimeount = conf.getLong("session.timeout");
+			if(sessionTimeount!=null && sessionTimeount>0)
+				sessionHandler.setSessionTimeout(sessionTimeount);
+			
+			router.route().handler(sessionHandler);
+	
+			if(gsetting.hasAuth()){
+				router.route().handler(UserSessionHandler.create(authMgr.authProvider));
+				
+				GateAuthHandler authHandler = new GateAuthHandler(authMgr);
+				router.route().handler(authHandler::handle);
+				
+			}
 		}
 
 	}
