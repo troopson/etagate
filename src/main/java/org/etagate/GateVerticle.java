@@ -153,7 +153,8 @@ public class GateVerticle extends AbstractVerticle {
 	private void createWebClient(){
 		WebClientOptions op = new WebClientOptions();
 		op.setKeepAlive(true);
-		op.setConnectTimeout(3000);
+		op.setIdleTimeout(500);
+		op.setConnectTimeout(500);
 		op.setSsl(false);
 		op.setLogActivity(true);
 		this.webclient = WebClient.create(vertx,op);
