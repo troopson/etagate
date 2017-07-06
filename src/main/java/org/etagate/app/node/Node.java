@@ -230,13 +230,15 @@ public class Node {
 		return res->{			
 			
 			if(res.succeeded()){
+				
+				h.handle(Future.succeededFuture(res.result()));
 				if(log.isInfoEnabled())
 					log.info(method + " " + app.name +  " http://" + this.host + ":"
 						+ this.port + uri);
-				
 			}else{
 				Throwable t = res.cause();
 				Node.this.markFail(t);
+				h.handle(Future.failedFuture(t));
 				if(log.isInfoEnabled()){
 					if(t instanceof java.util.concurrent.TimeoutException)
 						log.info("timeout "+this.toString());
@@ -245,7 +247,6 @@ public class Node {
 				}
 			}
 			
-			h.handle(res);
 		};			
 	}
 		
