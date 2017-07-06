@@ -106,12 +106,7 @@ public class Node {
 		if(maxFail>0 && failed>maxFail)
 			gtMaxFail=true;
 		
-		if(log.isInfoEnabled()){
-			if(t instanceof java.util.concurrent.TimeoutException)
-				log.info("timeout error. "+this.toString());
-			else
-				log.info("fail:"+t.getClass()+"  "+this.toString());		
-		}
+		
 		log.error(t);
 		
 	}
@@ -133,6 +128,8 @@ public class Node {
 		return t.host.equals(host)&& t.port == port;
 	}
 	
+	
+	
 	//==================================================
 	public void get(WebClient http,String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
 
@@ -142,8 +139,8 @@ public class Node {
 				req.addQueryParam(entry.getKey(), "" + entry.getValue());
 			});
 		}
-		
-		this.sendWithBreaker(f->req.timeout(this.app.timeout).send(f), h);
+				
+		this.sendWithBreaker(f->req.timeout(this.app.timeout).send(f), this.wrap(HttpMethod.GET,uri, h));
 				
 	}
 	
@@ -193,6 +190,8 @@ public class Node {
 		
 		Future<HttpResponse<Buffer>> fu = Future.future();
 		
+		Handler<AsyncResult<HttpResponse<Buffer>>> h = this.wrap(method,uri, fu.completer());
+		
 		MultiMap attribute = clientRequest.formAttributes();		
 		if(attribute!=null && method.equals(HttpMethod.POST)){
 			
@@ -200,19 +199,16 @@ public class Node {
 			query.addAll(attribute);
 			
 			
-			this.sendWithBreaker(f->appRequest.sendForm(query, f), fu.completer());
+			this.sendWithBreaker(f->appRequest.sendForm(query, f), h);
 			
 		}else{
 			Buffer body = rc.getBody();
 			if(body.length()<=0)
-				this.sendWithBreaker(f->appRequest.send(f), fu.completer());
+				this.sendWithBreaker(f->appRequest.send(f), h);
 			else
-			    this.sendWithBreaker(f->appRequest.sendBuffer(body, f), fu.completer());
+			    this.sendWithBreaker(f->appRequest.sendBuffer(body, f), h);
 			
-		}
-		if(log.isInfoEnabled())
-			log.info("request:" + app.name + "  method:" + method + "   http://" + this.host + ":"
-				+ this.port + uri);
+		}		
 		
 		return fu;
 		
@@ -224,21 +220,31 @@ public class Node {
 		if(this.breaker!=null){
 			breaker.<HttpResponse<Buffer>>execute(f->{
 				dorequest.handle(f.completer());
-				//appRequest.sendBuffer(rc.getBody(), this.wrap(f.completer()));
-			}).setHandler(this.wrap(handler));	
+			}).setHandler(handler);	
 		}else{
-			dorequest.handle(this.wrap(handler));
-			//appRequest.sendBuffer(rc.getBody(),this.wrap(fu.completer()));
+			dorequest.handle(handler);
 		}
 	}
 	
-	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(Handler<AsyncResult<HttpResponse<Buffer>>> h){
+	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(HttpMethod method,String uri,Handler<AsyncResult<HttpResponse<Buffer>>> h){
 		return res->{			
 			
-			if(!res.succeeded()){
+			if(res.succeeded()){
+				if(log.isInfoEnabled())
+					log.info(method + " " + app.name +  " http://" + this.host + ":"
+						+ this.port + uri);
 				
-				Node.this.markFail(res.cause());
+			}else{
+				Throwable t = res.cause();
+				Node.this.markFail(t);
+				if(log.isInfoEnabled()){
+					if(t instanceof java.util.concurrent.TimeoutException)
+						log.info("timeout "+this.toString());
+					else
+						log.info("fail:"+t.getClass()+" "+this.toString());		
+				}
 			}
+			
 			h.handle(res);
 		};			
 	}
