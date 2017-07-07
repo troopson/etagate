@@ -12,8 +12,14 @@ import org.etagate.app.node.NodeStragegy;
 import org.etagate.app.node.RoundNodeStrategy;
 import org.etagate.helper.S;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.client.HttpResponse;
+import io.vertx.ext.web.client.WebClient;
 
 /**
  * @author 瞿建军       Email: troopson@163.com
@@ -21,7 +27,8 @@ import io.vertx.core.http.HttpServerRequest;
  */
 public class App {
 	
-	
+
+	public final WebClient webclient;
 	public String name;
 	public boolean cut_appName=true;
 	public long timeout=1000;
@@ -37,12 +44,13 @@ public class App {
 	private int maxfail=-1; 
 	private long circuit_reset=-1;
 
-	public App(String name){
-		this(name,null);
+	public App(WebClient webclient,String name){
+		this(webclient,name,null);
 	}
 	
-	public App(String name,NodeStragegy s){
+	public App(WebClient webclient,String name,NodeStragegy s){
 		this.name=name;
+		this.webclient=webclient;
 		if(s==null)
 			this.nodeStrategy = new RoundNodeStrategy();
 		else
@@ -102,7 +110,7 @@ public class App {
 	}
 	
 	
-	public Node getNode(HttpServerRequest clientRequest){	
+	private Node getNode(HttpServerRequest clientRequest){	
 		if(clientRequest!=null && this.dev && devmode!=null){
 			Node n = devmode.getDevNode(this, clientRequest);
 			if(n!=null)
@@ -110,6 +118,53 @@ public class App {
 		}
 		return  nodeStrategy.getNode(Optional.ofNullable(clientRequest));
 				
+	}
+	
+	
+	public Future<HttpResponse<Buffer>> doGet(String uri,JsonObject param){
+		
+		Node node = this.getNode(null);
+		
+		Future<HttpResponse<Buffer>> fu = Future.future();
+		if(node == null){			
+			fu.fail(new java.util.concurrent.TimeoutException());
+			return fu;
+		}
+		
+		node.get(uri, param, fu.completer());
+		
+		return fu;
+		
+	}
+	
+	public Future<JsonObject> doGetJson(String uri,JsonObject param){
+		Future<HttpResponse<Buffer>> fu = this.doGet(uri, param);
+		Future<JsonObject> re= Future.future();
+		fu.setHandler(ar -> {
+				if(ar.succeeded()){
+					JsonObject u = ar.result().bodyAsJsonObject();
+					re.complete(u);
+				}else{
+					re.fail(ar.cause());
+				}	
+			});
+		return re;
+	}
+	
+	
+	public Future<HttpResponse<Buffer>> takeRequest(RoutingContext rc, HttpServerRequest clientRequest,String uri){
+		Node node = this.getNode(clientRequest);
+		
+		Future<HttpResponse<Buffer>> fu = Future.future();
+		if(node == null){			
+			fu.fail(new java.util.concurrent.TimeoutException());
+			return fu;
+		}
+			
+		node.dispatchRequest(rc, clientRequest, uri)
+		    .setHandler(fu.completer());
+		
+		return fu;
 	}
 
 

@@ -38,13 +38,13 @@ public class RoundNodeStrategy implements NodeStragegy {
 			}else
 				n = node.get(idx);
 			
-			if(n.isActive())
+			if(n.canTake())
 				return n;	
 			else
 				times++;
 		}
 		
-		return node.get(0);
+		return null;
 		
 	}
 

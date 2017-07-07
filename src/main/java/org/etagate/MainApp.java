@@ -37,7 +37,7 @@ public class MainApp extends AbstractVerticle {
 		
 		vertx.<GateSetting>executeBlocking(v->{
 			GateSetting gs = new GateSetting();
-			gs.parse(vertx,u);
+			gs.parse(u);
 			v.complete(gs);
 		}, r->{
 			if(r.succeeded()){

@@ -3,10 +3,13 @@
  */
 package org.etagate.request;
 
+import java.util.concurrent.TimeoutException;
+
 import org.etagate.app.App;
-import org.etagate.app.node.Node;
+import org.etagate.helper.HttpStatus;
 import org.etagate.helper.S;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -16,7 +19,6 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpResponse;
-import io.vertx.ext.web.client.WebClient;
 
 /**
  * @author 瞿建军 Email: troopson@163.com 2017年4月12日
@@ -27,11 +29,9 @@ public class RequestHandler implements Handler<RoutingContext> {
 
 	
 	private final App appObj;
-	private final WebClient client;
 
-	public RequestHandler(WebClient client, App appinfo) {
+	public RequestHandler(App appinfo) {
 		this.appObj = appinfo;
-		this.client = client;
 	}
 
 	@Override
@@ -42,16 +42,19 @@ public class RequestHandler implements Handler<RoutingContext> {
 		String uri = clientRequest.uri();
 		
 		uri = appObj.offsetUrl(uri);
-
-		Node node = appObj.getNode(clientRequest);
 		
-		node.dispatchRequest(this.client, rc, clientRequest, uri)
-		    .setHandler(ar->{
+		Future<HttpResponse<Buffer>> fu = appObj.takeRequest(rc, clientRequest, uri);
+		fu.setHandler(ar->{
 		    	HttpServerResponse clientResponse = rc.response();
 		    	if (ar.succeeded()) {					
 					this.handle(clientRequest, clientResponse, ar.result());					
 				} else {
-					clientResponse.setStatusCode(500);
+					
+					if(ar.cause() instanceof TimeoutException)
+						clientResponse.setStatusCode(HttpStatus.Request_Timeout);
+					else
+						clientResponse.setStatusCode(HttpStatus.Service_Unavailable);
+					
 					ar.cause().printStackTrace();					
 				}		    	
 		    	clientResponse.end();				

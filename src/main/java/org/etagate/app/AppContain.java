@@ -16,6 +16,9 @@ public class AppContain {
 
 	private  Map<String, App> app;
 	
+	public boolean isEmpty(){
+		return (app==null || app.isEmpty())?true:false;
+	}
 	
 	public void addAppObject(App a){
 		if(a==null)

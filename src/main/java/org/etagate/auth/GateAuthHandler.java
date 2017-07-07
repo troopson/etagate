@@ -3,6 +3,7 @@
  */
 package org.etagate.auth;
 
+import org.etagate.helper.HttpStatus;
 import org.etagate.helper.RequestHelper;
 
 import io.vertx.core.http.HttpServerRequest;
@@ -55,7 +56,7 @@ public class GateAuthHandler extends AuthHandlerImpl {
 					User u = res.result();
 					//如果校验成功，返回200，否则返回400
 					if(u==null)
-						rc.fail(401);
+						rc.fail(HttpStatus.Unauthorized);
 					else{
 						//这里是设置到了rc里面，并没有放到session，
 						//session中是通过一个监听putHeader的endHandler放入的
@@ -69,21 +70,21 @@ public class GateAuthHandler extends AuthHandlerImpl {
 						if(s!=null){
 							RequestHelper.redirect(request, clientResponse, s);
 						}else{
-							clientResponse.setStatusCode(200);
+							clientResponse.setStatusCode(HttpStatus.OK);
 						}						
 						clientResponse.end("ok");
 						
 					}
 				}else{
 					res.cause().printStackTrace();
-					rc.fail(500);
+					rc.fail(HttpStatus.Internal_Server_Error);
 				}
 			});			
 						
 		}else{
 			User u = rc.user();
 			if(u==null){
-				rc.fail(403);
+				rc.fail(HttpStatus.Unauthorized);
 			}else
 				this.authorise(u, rc);
 			
@@ -100,7 +101,7 @@ public class GateAuthHandler extends AuthHandlerImpl {
 	           if (res.result()) {
 	              context.next();
 	           } else {
-	              context.fail(403);
+	              context.fail(HttpStatus.Unauthorized);
 	           }
 	        } else {
 	           context.fail(res.cause());

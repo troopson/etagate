@@ -4,6 +4,9 @@ import org.etagate.app.App;
 import org.etagate.app.node.WeightNodeStrategy;
 import org.junit.Test;
 
+import io.vertx.core.Vertx;
+import io.vertx.ext.web.client.WebClient;
+
 public class TestWeightStrategy {
 
 	
@@ -17,7 +20,9 @@ public class TestWeightStrategy {
 	
 	@Test
 	public void testGetNode() {
-		App a = new App("test");
+		Vertx vertx = Vertx.vertx();
+		WebClient http = WebClient.create(vertx);
+		App a = new App(http,"test");
 		WeightNodeStrategy w = new WeightNodeStrategy();
 		w.addNode(a.createDevNode("10.10.10.1",80,1));
 		w.addNode(a.createDevNode("10.10.10.2",80,2));
@@ -30,8 +35,11 @@ public class TestWeightStrategy {
 		w.addNode(a.createDevNode("10.10.10.9",80,9));
 		w.addNode(a.createDevNode("10.10.10.10",80,10));
 		
-		for(int i=0; i<100 ;i++)
-		   System.out.println(w.getNode(null).toString());
+		for(int i=0; i<100 ;i++){
+//			Node n = w.getNode(null);
+//			System.out.println(n);
+			System.out.println(w.getNode(null).toString());
+		}
 		
 		
 	}

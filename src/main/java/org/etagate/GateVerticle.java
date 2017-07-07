@@ -47,6 +47,8 @@ public class GateVerticle extends AbstractVerticle {
 	
 	private GateSetting gsetting;
 	
+	private AppContain appContain;
+	
 	
 
 	public void start() throws Exception {
@@ -56,9 +58,7 @@ public class GateVerticle extends AbstractVerticle {
 		HttpServerOptions options = this.configSSL(conf);		
 		
 		HttpServer server = vertx.createHttpServer(options);
-
-		
-		
+				
 		int port = Integer.parseInt(conf.getString("port", "80"));
 
 		// ============初始化======================
@@ -66,12 +66,12 @@ public class GateVerticle extends AbstractVerticle {
 		this.webroot = conf.getString("static.file.dir");
 		this.upload_dir = conf.getString("upload.dir");
 
-		AppContain appContain = gsetting.getAppContain();
-		
 		this.createWebClient();
+		this.appContain = gsetting.getAppContain(vertx,this.webclient);
 		
-		if(gsetting.hasAuth())
-			authMgr = new AuthMgr(gsetting.getAuthSetting(),this.webclient,appContain);
+		
+		if(gsetting.hasAuth() && !this.appContain.isEmpty())
+			authMgr = new AuthMgr(gsetting.getAuthSetting(),appContain);
 
 		String index_page = conf.getString("index.page");
 		router = Router.router(this.vertx);		
@@ -95,8 +95,8 @@ public class GateVerticle extends AbstractVerticle {
 		this.addBasicRoute(conf);
 
 		
-		
-		AppRoute.addAppRoute(appContain,webclient,router);
+		if(!appContain.isEmpty())
+			AppRoute.addAppRoute(appContain,router);
 
 		//如果配置了静态文件目录，那么在没有命中前面的route path时，可以直接映射到静态文件目录中去
 		if(webroot!=null){
@@ -137,7 +137,7 @@ public class GateVerticle extends AbstractVerticle {
 			
 			router.route().handler(sessionHandler);
 	
-			if(gsetting.hasAuth()){
+			if(gsetting.hasAuth()  && !this.appContain.isEmpty()){
 				router.route().handler(UserSessionHandler.create(authMgr.authProvider));
 				
 				GateAuthHandler authHandler = new GateAuthHandler(authMgr);

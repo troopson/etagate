@@ -30,7 +30,6 @@ import io.vertx.ext.web.FileUpload;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
-import io.vertx.ext.web.client.WebClient;
 
 /**
  * @author 瞿建军       Email: troopson@163.com
@@ -39,6 +38,8 @@ import io.vertx.ext.web.client.WebClient;
 public class Node {
 	
 	public static final Logger log = LoggerFactory.getLogger(Node.class);
+	
+	public static int REQUEST_Queue_MIN = 10;
 	
 	private CircuitBreaker breaker;
 	
@@ -52,6 +53,11 @@ public class Node {
 		
 	private AtomicInteger failTimes=new AtomicInteger(0);
 	private boolean gtMaxFail=false;
+	
+	
+	private boolean timeout=false;
+	private Set<HttpRequest<Buffer>> reqeustQueue=new HashSet<>();
+	
 		
 	public Node(App app,String host, int port, int weight){
 		this(app,host, port, weight,false);
@@ -84,9 +90,14 @@ public class Node {
 	//如果有断路器，那么返回断路器的状态，
 	//如果没有，按照最大失败次数的设置，超过最大失败次数，返回false
 	//如果没有设置最大失败次数，那么始终返回true
-	public boolean isActive(){
-		if(this.breaker==null){			
-			return !this.gtMaxFail;
+	public boolean canTake(){
+		if(this.breaker==null){		
+			if(this.gtMaxFail)
+				return false;
+			if(this.timeout && this.reqeustQueue.size()>REQUEST_Queue_MIN)
+				return false;
+			
+			return true;
 		}else if(this.breaker.state()==CircuitBreakerState.OPEN)
 			return false;
 		return true;
@@ -99,24 +110,9 @@ public class Node {
 	}
 	
 	
-	private void markFail(Throwable t){
-		
-		int failed = failTimes.incrementAndGet();
-		int maxFail = app.getMaxfail();
-		if(maxFail>0 && failed>maxFail)
-			gtMaxFail=true;
-		
-		
-		log.error(t);
-		
-	}
-	
-	
-	
-	
 	@Override
 	public String toString(){
-		return host+":"+port+"("+this.weight+")  failed times:"+failTimes.get();
+		return host+":"+port+"("+this.weight+"), timeout:"+this.timeout+",  failed times:"+failTimes.get();
 	}
 	
 
@@ -131,39 +127,25 @@ public class Node {
 	
 	
 	//==================================================
-	public void get(WebClient http,String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
+	public void get(String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
 
-		HttpRequest<Buffer> req = http.get(this.port,this.host, uri);
+		HttpRequest<Buffer> req = app.webclient.get(this.port,this.host, uri);
 		if(param!=null){
 			param.forEach(entry -> {
 				req.addQueryParam(entry.getKey(), "" + entry.getValue());
 			});
 		}
+		reqeustQueue.add(req);		
+		this.sendWithBreaker(f->req.timeout(this.app.timeout).send(f), this.wrap(req,HttpMethod.GET,uri, h));
 				
-		this.sendWithBreaker(f->req.timeout(this.app.timeout).send(f), this.wrap(HttpMethod.GET,uri, h));
-				
-	}
+	}	
 	
-	public void getJson(WebClient http,String uri, JsonObject param, Handler<AsyncResult<JsonObject>> h) {
-		
-		this.get(http, uri, param, ar -> {
-			if(ar.succeeded()){
-				JsonObject u = ar.result().bodyAsJsonObject();
-				h.handle(Future.succeededFuture(u));
-			}else{
-				h.handle(Future.failedFuture(ar.cause()));
-			}	
-		});
-
-	}
-	
-	
-	public Future<HttpResponse<Buffer>> dispatchRequest(WebClient http,RoutingContext rc,HttpServerRequest clientRequest,String uri){
+	public Future<HttpResponse<Buffer>> dispatchRequest(RoutingContext rc,HttpServerRequest clientRequest,String uri){
 		HttpMethod method = clientRequest.method();
 		
-		HttpRequest<Buffer> appRequest = http.request(method, uri).ssl(false).timeout(app.timeout)
+		HttpRequest<Buffer> appRequest = app.webclient.request(method, uri).ssl(false).timeout(app.timeout)
 				.port(this.port).host(this.host);
-		
+				
 		
 		MultiMap cheads = clientRequest.headers();		
 		MultiMap heads = appRequest.headers();
@@ -188,9 +170,10 @@ public class Node {
 			}
 		}
 		
+		reqeustQueue.add(appRequest);	
 		Future<HttpResponse<Buffer>> fu = Future.future();
 		
-		Handler<AsyncResult<HttpResponse<Buffer>>> h = this.wrap(method,uri, fu.completer());
+		Handler<AsyncResult<HttpResponse<Buffer>>> h = this.wrap(appRequest,method,uri, fu.completer());
 		
 		MultiMap attribute = clientRequest.formAttributes();		
 		if(attribute!=null && method.equals(HttpMethod.POST)){
@@ -226,29 +209,39 @@ public class Node {
 		}
 	}
 	
-	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(HttpMethod method,String uri,Handler<AsyncResult<HttpResponse<Buffer>>> h){
+	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(HttpRequest<Buffer> req,HttpMethod method,String uri,Handler<AsyncResult<HttpResponse<Buffer>>> h){
 		return res->{			
+			reqeustQueue.remove(req);
 			
 			if(res.succeeded()){
-				
+				this.timeout = false;
 				h.handle(Future.succeededFuture(res.result()));
 				if(log.isInfoEnabled())
-					log.info(method + " " + app.name +  " http://" + this.host + ":"
+					log.info(app.name+", "+method + " http://" + this.host + ":"
 						+ this.port + uri);
 			}else{
 				Throwable t = res.cause();
-				Node.this.markFail(t);
-				h.handle(Future.failedFuture(t));
-				if(log.isInfoEnabled()){
-					if(t instanceof java.util.concurrent.TimeoutException)
-						log.info("timeout "+this.toString());
-					else
-						log.info("fail:"+t.getClass()+" "+this.toString());		
-				}
+				
+				if(t instanceof java.util.concurrent.TimeoutException){
+					this.timeout = true;
+					if(log.isInfoEnabled())					
+						log.warn("timeount: "+app.name+", "+method + " http://" + this.host + ":"
+								+ this.port + uri);
+					
+				}else{
+					int failed = failTimes.incrementAndGet();
+					int maxFail = app.getMaxfail();
+					if(maxFail>0 && failed>maxFail)
+						gtMaxFail=true;
+					
+					log.error(t);
+				}	
+				h.handle(Future.failedFuture(t));				
 			}
 			
 		};			
 	}
+		
 		
 	private JsonObject fileToJson(FileUpload fu){
 		JsonObject j =new JsonObject();

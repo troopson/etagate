@@ -8,13 +8,9 @@ import java.util.Set;
 
 import org.etagate.app.App;
 import org.etagate.app.AppContain;
-import org.etagate.app.node.Node;
 import org.etagate.helper.S;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.WebClient;
 
 /**
  * @author 瞿建军       Email: troopson@163.com
@@ -39,8 +35,6 @@ public class AuthMgr {
 		
 	public final GateAuthProvider authProvider;
 	
-	public final WebClient webclient;
-	
 	
 	/*
 	 * "not.auth.sufix": "*.bmp|*.gif|*.jpg|*.png|*.woff|*.css|*.js",
@@ -48,7 +42,7 @@ public class AuthMgr {
     "authorisation.url": "/waweb/a/check",
     "auth.app": "waweb"
 	 */
-	public AuthMgr(JsonObject conf,WebClient client,AppContain app){
+	public AuthMgr(JsonObject conf,AppContain app){
 		
 		this.authenticationUrl = conf.getString("authentication");
 		this.authorisationUrl = conf.getString("authorisation");
@@ -61,7 +55,6 @@ public class AuthMgr {
 		this.setNotAuthSufix(sufix);
 		this.setNoAuthPaths(noauthpath);
 		
-		this.webclient= client;
 		this.authApp = app.getAppInfo(authapp);		
 		
 		this.authenticationUrl = this.authApp.offsetUrl(this.authenticationUrl);
@@ -102,17 +95,7 @@ public class AuthMgr {
 		
 	}
 	
-
-	public Node authNode(){
-		return this.authApp.getNode(null);
-	}
 	
-	public void getJsonResult(String uri, JsonObject param, Handler<AsyncResult<JsonObject>> h) {
-		
-		Node node = this.authApp.getNode(null);		
-		node.getJson(this.webclient, uri, param, h);
-	}
-		
 	
 	public boolean isMatchNoAuthPath(String uri){
 		//如果匹配到指定的后缀，那么不进行权限控制

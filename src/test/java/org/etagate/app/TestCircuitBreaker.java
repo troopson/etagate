@@ -15,7 +15,7 @@ public class TestCircuitBreaker {
 	public static void main(String[] args) throws InterruptedException {
 		Vertx vertx = Vertx.vertx();
 		WebClient http = WebClient.create(vertx);
-		App a =new App("test");		
+		App a =new App(http,"test");		
 		
 		
 		
@@ -30,15 +30,15 @@ public class TestCircuitBreaker {
 				
 		};
 		
-		n.get(http, "/test", null, h);
-		n.get(http, "/test", null, h);
-		n.get(http, "/test", null, h);
+		n.get("/test", null, h);
+		n.get("/test", null, h);
+		n.get("/test", null, h);
 
 		for(int i=0;i<20;i++){
 			Thread.sleep(10* 1000);
-			n.get(http, "/test", null, h);
-			n.get(http, "/test", null, h);
-			n.get(http, "/test", null, h);
+			n.get("/test", null, h);
+			n.get("/test", null, h);
+			n.get("/test", null, h);
 		}
 
 	}

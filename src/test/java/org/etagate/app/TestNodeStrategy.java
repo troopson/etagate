@@ -6,11 +6,16 @@ import org.etagate.app.node.WeightNodeStrategy;
 import org.junit.Assert;
 import org.junit.Test;
 
+import io.vertx.core.Vertx;
+import io.vertx.ext.web.client.WebClient;
+
 public class TestNodeStrategy {
 
 	@Test
 	public void testRoundNodeStrategy() {
-		App a =new App("test");		
+		Vertx vertx = Vertx.vertx();
+		WebClient http = WebClient.create(vertx);
+		App a =new App(http,"test");		
 		RoundNodeStrategy r = new RoundNodeStrategy();
 		
 		r.addNode(new Node(a,"1.1.1.1", 80, 0));
@@ -20,7 +25,7 @@ public class TestNodeStrategy {
 		System.out.println("==========RoundNodeStrategy =================");
 		for(int i=0;i<1000;i++){
 			Node n = r.getNode(null);
-			Assert.assertTrue(n.isActive());
+			Assert.assertTrue(n.canTake());
 			System.out.println(n.host);
 		}
 		
@@ -29,7 +34,9 @@ public class TestNodeStrategy {
 	
 	@Test
 	public void testWeightNodeStrategy() {
-		App a =new App("test");		
+		Vertx vertx = Vertx.vertx();
+		WebClient http = WebClient.create(vertx);
+		App a =new App(http,"test");		
 		WeightNodeStrategy r = new WeightNodeStrategy();
 		
 		r.addNode(new Node(a,"1.1.1.1", 80, 1));
@@ -40,7 +47,7 @@ public class TestNodeStrategy {
 		System.out.println("==========WeightNodeStrategy =================");
 		for(int i=0;i<1000;i++){
 			Node n = r.getNode(null);
-			Assert.assertTrue(n.isActive());
+			Assert.assertTrue(n.canTake());
 			System.out.println(n.host);
 		}
 	}
@@ -52,7 +59,7 @@ public class TestNodeStrategy {
 		}
 		
 		@Override
-		public boolean isActive(){
+		public boolean canTake(){
 			return false;
 		}
 		

@@ -4,7 +4,6 @@
 package org.etagate.auth;
 
 import org.etagate.app.App;
-import org.etagate.app.node.Node;
 import org.etagate.helper.S;
 
 import io.vertx.core.AsyncResult;
@@ -42,8 +41,8 @@ public class GateAuthProvider implements AuthProvider {
 	public void authenticate(JsonObject authInfo, Handler<AsyncResult<User>> h) {
 		
 		String uri = authMgr.getAuthenticationUrl();
-		Node n = authMgr.authNode();
-		n.getJson(authMgr.webclient,uri, authInfo, ar->{
+		Future<JsonObject> fu = authMgr.authApp.doGetJson(uri, authInfo);
+		fu.setHandler(ar->{
 			if(ar.succeeded()){
 				//如果用户校验后，需要返回一个json串，其中包括用户名密码校验的结果，
 				// 网关会把结果返给前端页面，由页面处理最终跳转
@@ -86,8 +85,8 @@ public class GateAuthProvider implements AuthProvider {
 		
 		pricipal.put("permission", authapp.offsetUrl(permission));
 //		System.out.println("authorise uri: "+uri);
-		Node n = authMgr.authNode();
-		n.get(authMgr.webclient,uri, pricipal, res->{
+		Future<HttpResponse<Buffer>> fu = authMgr.authApp.doGet(uri, pricipal);
+		fu.setHandler(res->{
 			if(res.succeeded()){
 				HttpResponse<Buffer> appResponse = res.result();
 				

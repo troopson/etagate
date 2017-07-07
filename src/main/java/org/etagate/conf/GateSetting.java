@@ -25,6 +25,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.ext.web.client.WebClient;
 
 /**
  * @author 瞿建军 Email: troopson@163.com 2017年5月27日
@@ -45,12 +46,13 @@ public class GateSetting {
 	private JsonObject properties=new JsonObject();
 	private JsonObject authSetting = new JsonObject();
 	private boolean hasAuth=true;
-	private AppContain appContain =null;
+//	private AppContain appContain =null;
 	
+	private List<Element> app_tags=null;
 
 	
 			
-	public void parse(Vertx vertx,URL is) {
+	public void parse(URL is) {
 		SAXReader saxReader = new SAXReader();
 
 		try {
@@ -59,7 +61,7 @@ public class GateSetting {
 			
 			collectProperty(root);
 			parseAuth(root);
-			parseApp(vertx,root);
+			parseApp(root);
 //			
 //			System.out.println("====================parse ok=============");
 //			System.out.println(properties.toString());
@@ -125,23 +127,17 @@ public class GateSetting {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void parseApp(Vertx vertx,Element root){
+	private void parseApp(Element root){
 		
-		List<Element> l = root.elements(APP_TAG);
-		// System.out.println("====================here=========="+l.size()+"
-		// "+el.toString());
-		appContain = new AppContain();
-		
-		l.forEach(app -> {
-			// System.out.println(app.toString());
-			buildAppObject(vertx,appContain, app);
-		});
+		this.app_tags = root.elements(APP_TAG);
 		
 	}
 	
 	
+	
+	
 	@SuppressWarnings("unchecked")
-	private void buildAppObject(Vertx vertx,AppContain appinfo, Element appNode) {
+	private void buildAppObject(Vertx vertx,WebClient webclient,AppContain appinfo, Element appNode) {
 
 		String name = appNode.attributeValue("name");
 
@@ -167,7 +163,7 @@ public class GateSetting {
 		NodeStragegy ns = createNodeStrategy(appNode);
 		DevModeSupport devmode = new DevModeSupport();
 		
-		App a = new App(name,ns);
+		App a = new App(webclient,name,ns);
 		a.setCutAppName(cutname);
 		if (S.isNotBlank(timeout))
 			a.setTimeout(Long.parseLong(timeout));
@@ -225,7 +221,16 @@ public class GateSetting {
 		return hasAuth;
 	}
 
-	public AppContain getAppContain() {
+	public AppContain getAppContain(Vertx vertx,WebClient webclient) {
+		// System.out.println("====================here=========="+l.size()+"
+		// "+el.toString());
+		AppContain appContain = new AppContain();
+		
+		this.app_tags.forEach(app -> {
+			// System.out.println(app.toString());
+			buildAppObject(vertx,webclient,appContain, app);
+		});
+		
 		return appContain;
 	}
 

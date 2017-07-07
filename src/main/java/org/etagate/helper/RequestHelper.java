@@ -29,7 +29,7 @@ public class RequestHelper {
 		}
 		response.putHeader("Content-Type", "text/html;charset=utf-8");
 		response.putHeader("Location", mainpage);
-		response.setStatusCode(302);
+		response.setStatusCode(HttpStatus.See_OTher);
 		return response;
 	}
 	

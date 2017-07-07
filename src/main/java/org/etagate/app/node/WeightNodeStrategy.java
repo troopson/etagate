@@ -18,18 +18,29 @@ public class WeightNodeStrategy implements NodeStragegy {
 	
 	private List<Node> node =new ArrayList<>();
 	
-	private int totalWeight=0;
 	
 	@Override
 	public Node getNode(Optional<HttpServerRequest> clientRequest){
 		int sum =0 ;
-		int rand=(int)(1+Math.random()*totalWeight);
-		for(Node n : node){			
+		int total=0;
+		List<Node> canNode = new ArrayList<>();
+		for(Node n: node){
+			if(n.canTake()){
+				canNode.add(n);
+				total=total+n.weight;
+			}
+		}
+		if(canNode.isEmpty())
+			return null;
+		
+		int rand=(int)(1+Math.random()*total);
+//		System.out.println(rand+"  "+total);
+		for(Node n : canNode){			
 			sum = sum+n.weight;		
-			if(n.isActive() && rand<sum)
+			if(rand<=sum)
 				return n;
 		}
-		return node.get(0);
+		return null;
 	}
 	
 	
@@ -41,14 +52,12 @@ public class WeightNodeStrategy implements NodeStragegy {
 	@Override
 	public void addNode(Node node) {
 		this.node.add(node);	
-		this.totalWeight = this.totalWeight+node.weight;
 		this.sortNode();
 	}
 
 	@Override
 	public void delNode(Node node) {
 		this.node.remove(node);
-		this.totalWeight=this.totalWeight-node.weight;
 		this.sortNode();
 	}
 
@@ -61,7 +70,7 @@ public class WeightNodeStrategy implements NodeStragegy {
 		
 		this.node.sort((o1,o2)-> { return o1.weight>o2.weight?1:-1; });
 		
-		System.out.println(this.node.toString());
+//		System.out.println(this.node.toString());
 	}
 
 	
