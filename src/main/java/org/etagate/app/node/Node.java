@@ -39,7 +39,7 @@ public class Node {
 	
 	public static final Logger log = LoggerFactory.getLogger(Node.class);
 	
-	public static int REQUEST_Queue_MIN = 10;
+	public static int REQUEST_QUEUE_MIN = 5;
 	
 	private CircuitBreaker breaker;
 	
@@ -94,7 +94,7 @@ public class Node {
 		if(this.breaker==null){		
 			if(this.gtMaxFail)
 				return false;
-			if(this.timeout && this.reqeustQueue.size()>REQUEST_Queue_MIN)
+			if(this.timeout && !this.reqeustQueue.isEmpty())
 				return false;
 			
 			return true;
@@ -214,7 +214,9 @@ public class Node {
 			reqeustQueue.remove(req);
 			
 			if(res.succeeded()){
-				this.timeout = false;
+				if(this.timeout && this.reqeustQueue.size()<REQUEST_QUEUE_MIN)
+					this.timeout = false;
+				
 				h.handle(Future.succeededFuture(res.result()));
 				if(log.isInfoEnabled())
 					log.info(app.name+", "+method + " http://" + this.host + ":"
@@ -225,8 +227,7 @@ public class Node {
 				if(t instanceof java.util.concurrent.TimeoutException){
 					this.timeout = true;
 					if(log.isInfoEnabled())					
-						log.warn("timeount: "+app.name+", "+method + " http://" + this.host + ":"
-								+ this.port + uri);
+						log.warn("Timeout: "+ this.toString() + "  url: "+ uri);
 					
 				}else{
 					int failed = failTimes.incrementAndGet();
