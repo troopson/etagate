@@ -56,7 +56,7 @@ public class Node {
 	private boolean gtMaxFail=false;
 		
 	private boolean paused=false;
-	private Set<HttpRequest<Buffer>> reqeustQueue=new HashSet<>();
+	private AtomicInteger taskInProcessing=new AtomicInteger(0);
 	
 		
 	public Node(App app,String host, int port, int weight){
@@ -94,7 +94,7 @@ public class Node {
 		if(this.breaker==null){		
 			if(this.gtMaxFail)
 				return false;
-			if(this.paused && (this.reqeustQueue.size()>=REQUEST_QUEUE_MIN))
+			if(this.paused && (taskInProcessing.get()>=REQUEST_QUEUE_MIN))
 				return false;
 			
 			return true;
@@ -122,7 +122,7 @@ public class Node {
 		return host+":"+port+"("+this.weight+")"
 				+"  paused:"+this.paused
 				+"  failed times:"+continueFailTimes.get()
-				+"  tasks queue:"+this.reqeustQueue.size()
+				+"  tasks queue:"+taskInProcessing.get()
 				+"  gtMaxFail:"+this.gtMaxFail;
 	}
 	
@@ -148,7 +148,7 @@ public class Node {
 		}
 
 		Handler<AsyncResult<HttpResponse<Buffer>>> callback = this.wrap(req,HttpMethod.GET,uri, h);
-		reqeustQueue.add(req);	
+		taskInProcessing.incrementAndGet();
 		if(this.breaker!=null){
 			breaker.<HttpResponse<Buffer>>execute(f->{
 				req.send(f);
@@ -192,7 +192,7 @@ public class Node {
 			}
 		}
 //		log.info("add request new task size:"+reqeustQueue.size());
-		reqeustQueue.add(appRequest);	
+		taskInProcessing.incrementAndGet();
 		Future<HttpResponse<Buffer>> fu = Future.future();
 		
 		Handler<AsyncResult<HttpResponse<Buffer>>> h = this.wrap(appRequest,method,uri, fu.completer());
@@ -242,10 +242,10 @@ public class Node {
 
 	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(HttpRequest<Buffer> req,HttpMethod method,String uri,Handler<AsyncResult<HttpResponse<Buffer>>> h){
 		return res->{			
-			reqeustQueue.remove(req);
+			taskInProcessing.decrementAndGet();
 //			log.info("do remove, new size:"+reqeustQueue.size());
 			if(res.succeeded()){
-				if(this.paused && this.reqeustQueue.size()<REQUEST_QUEUE_MIN)
+				if(this.paused && taskInProcessing.get()<REQUEST_QUEUE_MIN)
 					this.paused = false;
 				
 				this.continueFailTimes.set(0);
