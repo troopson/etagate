@@ -5,7 +5,6 @@ package org.etagate.app.node;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.etagate.app.App;
 import org.etagate.auth.GateUser;
@@ -52,11 +51,11 @@ public class Node {
 
 	public final App app;
 		
-	private AtomicInteger continueFailTimes=new AtomicInteger(0);
+	private int continueFailTimes=0;
 	private boolean gtMaxFail=false;
 		
 	private boolean paused=false;
-	private AtomicInteger taskInProcessing=new AtomicInteger(0);
+	private int taskInProcessing=0;
 	
 		
 	public Node(App app,String host, int port, int weight){
@@ -94,7 +93,7 @@ public class Node {
 		if(this.breaker==null){		
 			if(this.gtMaxFail)
 				return false;
-			if(this.paused && (taskInProcessing.get()>=REQUEST_QUEUE_MIN))
+			if(this.paused && taskInProcessing>=REQUEST_QUEUE_MIN)
 				return false;
 			
 			return true;
@@ -121,8 +120,8 @@ public class Node {
 	public String toString(){
 		return host+":"+port+"("+this.weight+")"
 				+"  paused:"+this.paused
-				+"  failed times:"+continueFailTimes.get()
-				+"  tasks queue:"+taskInProcessing.get()
+				+"  failed times:"+continueFailTimes
+				+"  tasks queue:"+taskInProcessing
 				+"  gtMaxFail:"+this.gtMaxFail;
 	}
 	
@@ -148,7 +147,7 @@ public class Node {
 		}
 
 		Handler<AsyncResult<HttpResponse<Buffer>>> callback = this.wrap(req,HttpMethod.GET,uri, h);
-		taskInProcessing.incrementAndGet();
+		taskInProcessing=taskInProcessing+1;
 		if(this.breaker!=null){
 			breaker.<HttpResponse<Buffer>>execute(f->{
 				req.send(f);
@@ -192,7 +191,7 @@ public class Node {
 			}
 		}
 //		log.info("add request new task size:"+reqeustQueue.size());
-		taskInProcessing.incrementAndGet();
+		taskInProcessing=taskInProcessing+1;
 		Future<HttpResponse<Buffer>> fu = Future.future();
 		
 		Handler<AsyncResult<HttpResponse<Buffer>>> h = this.wrap(appRequest,method,uri, fu.completer());
@@ -241,14 +240,14 @@ public class Node {
 	
 
 	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(HttpRequest<Buffer> req,HttpMethod method,String uri,Handler<AsyncResult<HttpResponse<Buffer>>> h){
-		return res->{			
-			taskInProcessing.decrementAndGet();
+		return res->{
+			taskInProcessing=taskInProcessing-1;
 //			log.info("do remove, new size:"+reqeustQueue.size());
 			if(res.succeeded()){
-				if(this.paused && taskInProcessing.get()<REQUEST_QUEUE_MIN)
+				if(this.paused)
 					this.paused = false;
 				
-				this.continueFailTimes.set(0);
+				continueFailTimes=0;
 				
 				h.handle(Future.succeededFuture(res.result()));
 				
@@ -267,9 +266,9 @@ public class Node {
 						
 					}else{
 						
-						int failed = continueFailTimes.incrementAndGet();
+						continueFailTimes = continueFailTimes+1;
 						int maxFail = app.getMaxfail();
-						if(maxFail>0 && failed>maxFail)
+						if(maxFail>0 && continueFailTimes > maxFail)
 							gtMaxFail=true;
 						
 						log.error("Connect Error: {}  url: {}",t, this.toString() , uri);
