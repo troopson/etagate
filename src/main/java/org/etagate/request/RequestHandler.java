@@ -90,7 +90,9 @@ public class RequestHandler implements Handler<RoutingContext> {
 		
 //		String s =appResponse.bodyAsString();
 //		System.out.println(s);
-		clientResponse.write(appResponse.bodyAsBuffer());
+		Buffer buff = appResponse.bodyAsBuffer();
+		if(buff!=null && buff.length()>0)
+			clientResponse.write(buff);
 		
 	}
 

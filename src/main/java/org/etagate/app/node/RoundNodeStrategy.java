@@ -42,8 +42,7 @@ public class RoundNodeStrategy implements NodeStragegy {
 				return n;	
 			else
 				times++;
-		}
-		
+		}	
 		return null;
 		
 	}

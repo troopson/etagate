@@ -1,12 +1,9 @@
-configurations.all {
-	exclude module:'log4j-over-slf4j'
-	
-}
 
 buildscript {
     repositories {                
 	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/central" }
 	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/snapshots" } 
+	    jcenter() 
     }
    
 }
@@ -18,7 +15,7 @@ jar {
   archiveName = 'etagate.jar'
   from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
   manifest {
-    attributes 'Main-Class': 'io.vertx.core.Launcher'
+    attributes 'Main-Class': 'org.etagate.Launcher'
     attributes 'Main-Verticle': 'org.etagate.MainApp'
   }
 }
@@ -51,7 +48,7 @@ repositories {
 	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/snapshots" }  
 	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/spring.io" }
 	    maven { url "http://172.21.9.12:8081/nexus/content/repositories/spring.io.milestone" }   
-        //jcenter() 
+        jcenter() 
 
 }
 
@@ -68,7 +65,10 @@ dependencies {
 	 compile group: 'com.alibaba', name: 'fastjson', version: '1.2.24'
 	 compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.1'
 	 compile group: 'org.yaml', name: 'snakeyaml', version: '1.18'
-     compile group: 'org.slf4j', name: 'slf4j-jdk14', version: '1.7.25'
+     compile group: 'ch.qos.logback', name: 'logback-core', version: '1.1.7'
+     compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.7'
+ 	 compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+     compile group: 'org.javassist', name: 'javassist', version: '3.21.0-GA'
  
 	
      testCompile 'junit:junit:4.12'

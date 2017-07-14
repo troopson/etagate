@@ -7,12 +7,14 @@
     <!--上传文件后，保存的目录，目前暂时只能保存，微服务应用还不能获取到文件-->
    <property name="upload.dir">d:/temp</property>
    
-   <property name="server.instance">4</property>
+   <property name="server.instance">2</property>
    
-    <property name="index.page">/auth/mainpage</property>
+   <property name="index.page">/auth/mainpage</property>
+   <property name="app.maxPoolSize">500</property>
+   <property name="app.maxWaitQueueSize">1024</property>
    
-   <property name="bind.internal.ip">172.18.7.20</property>
-   <property name="bind.internal.port">8999</property>
+   <property name="inside.host">127.0.0.1</property>
+   <property name="inside.port">8999</property>
    
    <property name="session">true</property>
    <!-- property name="session.timeout"></property-->
@@ -35,9 +37,9 @@
       <exclude start="/login,/logout" />      
    </auth-->
    
-   <auth app="auth" authentication="/auth/login" authorisation="/auth/checkpermission" mainpage= "/auth/mainpage" successfield="userid">
+   <auth app="auth" loginpage="/xtgl/login" authentication="/auth/login" authorisation="/auth/checkpermission" mainpage= "/auth/mainpage" successfield="userid">
       <exclude end="*.bmp,*.gif,*.jpg,*.png,*.woff,*.woff2,*.css,*.js,*.ico" />
-      <exclude start="/flume/,/flume2/,/login,/logout" />      
+      <exclude start="/flume/,/flume2/,/logout" />      
    </auth>
 
    <!--

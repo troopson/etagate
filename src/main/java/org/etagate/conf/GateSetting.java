@@ -39,7 +39,7 @@ public class GateSetting {
 	public static final String EXCLUDE_TAG = "exclude";
 	public static final String PROPERTY_TAG = "property";
 	
-	public static final String ResType = "*.bmp,*.gif,*.jpg,*.png,*.woff,*.woff2,*.css,*.js,*.ico";
+	public static final String ResourceType = "*.bmp,*.gif,*.jpg,*.png,*.woff,*.woff2,*.css,*.js,*.ico";
 
 	public static final Logger log = LoggerFactory.getLogger(GateSetting.class);
 
@@ -49,6 +49,7 @@ public class GateSetting {
 //	private AppContain appContain =null;
 	
 	private List<Element> app_tags=null;
+	private String inside_address =null;
 
 	
 			
@@ -85,6 +86,12 @@ public class GateSetting {
 			String v = e.getStringValue();
 			properties.put(name.trim(), v.trim());
 		});
+		
+		String insidehost = properties.getString("inside.host");
+		String insideport = properties.getString("inside.port");
+		if(S.isNotBlank(insidehost) && S.isNotBlank(insideport))
+			this.inside_address =insidehost+":"+insideport;
+		
 	}
 	
 	
@@ -101,13 +108,14 @@ public class GateSetting {
 		authSetting.put("authorisation", auth.attributeValue("authorisation"));
 		authSetting.put("successfield", auth.attributeValue("successfield"));
 		authSetting.put("mainpage", auth.attributeValue("mainpage"));
+		authSetting.put("loginpage", auth.attributeValue("loginpage"));
 		
 		List<Element> exclude = auth.elements(EXCLUDE_TAG);
 		if(exclude==null)
 			return;
 		Set<String> end =new HashSet<>();
 		Set<String> start = new HashSet<>();
-		addExcludes(end, ResType);
+		addExcludes(end, ResourceType);
 		exclude.forEach(e ->{
 			String ends = e.attributeValue("end");
 			String starts = e.attributeValue("start");
@@ -173,7 +181,8 @@ public class GateSetting {
 			a.setCircuitMaxfail(Integer.parseInt(circuit_maxfail));
 		if(S.isNotBlank(circuit_reset))
 			a.setCircuitReset(Long.parseLong(circuit_reset)*1000);
-		
+		if(this.inside_address!=null)
+			a.setInside_address(this.inside_address);
 
 		if (nodes != null && !nodes.isEmpty()) {
 			nodes.forEach(n -> {
@@ -195,7 +204,7 @@ public class GateSetting {
 
 		appinfo.addAppObject(a);
 
-		log.info("add app route " + name);
+		log.info("[{}] route path /{} for [{}]" ,vertx.getOrCreateContext().deploymentID(), name, name);
 
 	}
 

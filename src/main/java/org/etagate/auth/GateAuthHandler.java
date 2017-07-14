@@ -84,7 +84,11 @@ public class GateAuthHandler extends AuthHandlerImpl {
 		}else{
 			User u = rc.user();
 			if(u==null){
-				rc.fail(HttpStatus.Unauthorized);
+				String loginpage=this.authMgr.getLoginpage();
+				if(loginpage!=null)
+					RequestHelper.redirect(request, loginpage).end();
+				else
+					rc.fail(HttpStatus.Unauthorized);
 			}else
 				this.authorise(u, rc);
 			

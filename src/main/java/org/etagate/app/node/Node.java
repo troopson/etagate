@@ -19,6 +19,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
@@ -51,11 +52,10 @@ public class Node {
 
 	public final App app;
 		
-	private AtomicInteger failTimes=new AtomicInteger(0);
+	private AtomicInteger continueFailTimes=new AtomicInteger(0);
 	private boolean gtMaxFail=false;
-	
-	
-	private boolean timeout=false;
+		
+	private boolean paused=false;
 	private Set<HttpRequest<Buffer>> reqeustQueue=new HashSet<>();
 	
 		
@@ -94,7 +94,7 @@ public class Node {
 		if(this.breaker==null){		
 			if(this.gtMaxFail)
 				return false;
-			if(this.timeout && !this.reqeustQueue.isEmpty())
+			if(this.paused && (this.reqeustQueue.size()>=REQUEST_QUEUE_MIN))
 				return false;
 			
 			return true;
@@ -103,16 +103,27 @@ public class Node {
 		return true;
 	}
 	
+	
 	public CircuitBreakerState status(){
 		if(this.breaker==null)
 			return null;
 		return breaker.state();
 	}
 	
+	public JsonObject toJsonObject(){
+		JsonObject json = new JsonObject();
+		json.put("host", this.host);
+		json.put("port", this.port);
+		return json;
+	}
 	
 	@Override
 	public String toString(){
-		return host+":"+port+"("+this.weight+"), timeout:"+this.timeout+",  failed times:"+failTimes.get();
+		return host+":"+port+"("+this.weight+")"
+				+"  paused:"+this.paused
+				+"  failed times:"+continueFailTimes.get()
+				+"  tasks queue:"+this.reqeustQueue.size()
+				+"  gtMaxFail:"+this.gtMaxFail;
 	}
 	
 
@@ -129,14 +140,22 @@ public class Node {
 	//==================================================
 	public void get(String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
 
-		HttpRequest<Buffer> req = app.webclient.get(this.port,this.host, uri);
+		HttpRequest<Buffer> req = app.webclient.get(this.port,this.host, uri).timeout(app.timeout);
 		if(param!=null){
 			param.forEach(entry -> {
 				req.addQueryParam(entry.getKey(), "" + entry.getValue());
 			});
 		}
-		reqeustQueue.add(req);		
-		this.sendWithBreaker(f->req.timeout(this.app.timeout).send(f), this.wrap(req,HttpMethod.GET,uri, h));
+
+		Handler<AsyncResult<HttpResponse<Buffer>>> callback = this.wrap(req,HttpMethod.GET,uri, h);
+		reqeustQueue.add(req);	
+		if(this.breaker!=null){
+			breaker.<HttpResponse<Buffer>>execute(f->{
+				req.send(f);
+			}).setHandler(callback);	
+		}else{			
+			req.send(callback);
+		}
 				
 	}	
 	
@@ -145,7 +164,7 @@ public class Node {
 		
 		HttpRequest<Buffer> appRequest = app.webclient.request(method, uri).ssl(false).timeout(app.timeout)
 				.port(this.port).host(this.host);
-				
+		
 		
 		MultiMap cheads = clientRequest.headers();		
 		MultiMap heads = appRequest.headers();
@@ -157,7 +176,10 @@ public class Node {
 //		System.out.println("==============="+user.principal().encode());
 		GateUser user = (GateUser)rc.user();
 		if (user != null)
-			heads.add(Globe.GATE_PRINCIPAL, user.principalString());
+			heads.add(Globe.GATE_PRINCIPAL, user.encodePrincipal());
+		String gateAddress = app.getInside_address();
+		if(gateAddress!=null)
+			heads.add(Globe.GATE_ADDRESS, gateAddress);
 		
 		if(method == HttpMethod.POST){
 			Set<FileUpload> up = rc.fileUploads();
@@ -169,7 +191,7 @@ public class Node {
 				appRequest.addQueryParam("_upload_files_", Json.encode(upfiles));	
 			}
 		}
-		
+//		log.info("add request new task size:"+reqeustQueue.size());
 		reqeustQueue.add(appRequest);	
 		Future<HttpResponse<Buffer>> fu = Future.future();
 		
@@ -181,15 +203,35 @@ public class Node {
 			MultiMap query = MultiMap.caseInsensitiveMultiMap();
 			query.addAll(attribute);
 			
+			if(this.breaker!=null){
+				breaker.<HttpResponse<Buffer>>execute(f->{
+					appRequest.sendForm(query, f);
+				}).setHandler(h);	
+			}else{			
+				appRequest.send(h);
+			}
 			
-			this.sendWithBreaker(f->appRequest.sendForm(query, f), h);
 			
 		}else{
 			Buffer body = rc.getBody();
-			if(body.length()<=0)
-				this.sendWithBreaker(f->appRequest.send(f), h);
-			else
-			    this.sendWithBreaker(f->appRequest.sendBuffer(body, f), h);
+			if(body.length()<=0){
+				if(this.breaker!=null){
+					breaker.<HttpResponse<Buffer>>execute(f->{
+						appRequest.send(f);
+					}).setHandler(h);	
+				}else{			
+					appRequest.send(h);
+				}
+				
+			}else{
+				if(this.breaker!=null){
+					breaker.<HttpResponse<Buffer>>execute(f->{
+						appRequest.sendBuffer(body, f);
+					}).setHandler(h);	
+				}else{			
+					appRequest.send(h);
+				}
+			}
 			
 		}		
 		
@@ -198,45 +240,42 @@ public class Node {
 	}
 	
 
-	private void sendWithBreaker(Handler<Handler<AsyncResult<HttpResponse<Buffer>>>> dorequest,Handler<AsyncResult<HttpResponse<Buffer>>> handler){
-
-		if(this.breaker!=null){
-			breaker.<HttpResponse<Buffer>>execute(f->{
-				dorequest.handle(f.completer());
-			}).setHandler(handler);	
-		}else{
-			dorequest.handle(handler);
-		}
-	}
-	
 	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(HttpRequest<Buffer> req,HttpMethod method,String uri,Handler<AsyncResult<HttpResponse<Buffer>>> h){
 		return res->{			
 			reqeustQueue.remove(req);
-			
+//			log.info("do remove, new size:"+reqeustQueue.size());
 			if(res.succeeded()){
-				if(this.timeout && this.reqeustQueue.size()<REQUEST_QUEUE_MIN)
-					this.timeout = false;
+				if(this.paused && this.reqeustQueue.size()<REQUEST_QUEUE_MIN)
+					this.paused = false;
+				
+				this.continueFailTimes.set(0);
 				
 				h.handle(Future.succeededFuture(res.result()));
-				if(log.isInfoEnabled())
-					log.info(app.name+", "+method + " http://" + this.host + ":"
-						+ this.port + uri);
+				
+				log.info("{}, {} http://{}:{}{}",app.name,method,this.host,this.port,uri);
+				
 			}else{
 				Throwable t = res.cause();
-				
-				if(t instanceof java.util.concurrent.TimeoutException){
-					this.timeout = true;
-					if(log.isInfoEnabled())					
-						log.warn("Timeout: "+ this.toString() + "  url: "+ uri);
-					
-				}else{
-					int failed = failTimes.incrementAndGet();
-					int maxFail = app.getMaxfail();
-					if(maxFail>0 && failed>maxFail)
-						gtMaxFail=true;
-					
-					log.error(t);
-				}	
+				//如果是被动关闭的，不当做网络情况处理
+				if(t instanceof VertxException){
+					log.warn("Connect was closed. {}  url: {} " ,this.toString(), uri);
+				}else{				
+					this.paused = true;
+					if( t instanceof java.util.concurrent.TimeoutException 
+					|| t instanceof  io.vertx.core.http.ConnectionPoolTooBusyException ){
+						log.warn("Timeout: {} url: {}", this.toString() , uri);
+						
+					}else{
+						
+						int failed = continueFailTimes.incrementAndGet();
+						int maxFail = app.getMaxfail();
+						if(maxFail>0 && failed>maxFail)
+							gtMaxFail=true;
+						
+						log.error("Connect Error: {}  url: {}",t, this.toString() , uri);
+						t.printStackTrace();
+					}	
+				}
 				h.handle(Future.failedFuture(t));				
 			}
 			

@@ -24,6 +24,8 @@ public class AuthMgr {
 	
 	private String mainpage;
 	
+	private String loginpage;
+	
 	
 	private String successFiled="userid";
 	
@@ -48,12 +50,16 @@ public class AuthMgr {
 		this.authorisationUrl = conf.getString("authorisation");
 		this.mainpage = conf.getString("mainpage");
 		this.successFiled = conf.getString("successfield","userid");
+		this.loginpage = conf.getString("loginpage");
+		
 		String authapp = conf.getString("app");
 				
 		String sufix = conf.getString("exclude.end");		
 		String noauthpath = conf.getString("exclude.start");	
 		this.setNotAuthSufix(sufix);
 		this.setNoAuthPaths(noauthpath);
+		if(S.isNotBlank(this.loginpage))
+			this.addNoAuthPath(this.loginpage);
 		
 		this.authApp = app.getAppInfo(authapp);		
 		
@@ -139,6 +145,10 @@ public class AuthMgr {
 
 	public String getAuthorisationUrl() {
 		return authorisationUrl;
+	}
+
+	public String getLoginpage() {
+		return loginpage;
 	}
 
 

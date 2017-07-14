@@ -29,7 +29,7 @@ public class MainApp extends AbstractVerticle {
 	public static final Logger log = LoggerFactory.getLogger(MainApp.class);
 	
 	public void start() throws Exception {
-	
+		
 		String[] args =vertx.getOrCreateContext().processArgs().toArray(new String[]{});			
 		Args argsObj =new Args(args);
 		
@@ -52,10 +52,14 @@ public class MainApp extends AbstractVerticle {
 				DeploymentOptions voptions = new DeploymentOptions();				
 				voptions.setConfig(conf);
 				for(int i=0;i<instance;i++){
-					GateVerticle gv = new GateVerticle();
+					OutServerVerticle gv = new OutServerVerticle();
 					gv.setGsetting(gs);
 				    vertx.deployVerticle(gv, voptions);
-				}				
+				}	
+				
+				InsideServerVerticle inside = new InsideServerVerticle();
+				inside.setGsetting(gs);
+				vertx.deployVerticle(inside,voptions);
 				
 			}else{
 				r.cause().printStackTrace();	
@@ -94,14 +98,6 @@ public class MainApp extends AbstractVerticle {
 		return u;
 	}
 	
-//	
-//	  @Before
-//	    public void setUp(TestContext context) {
-//	        VertxOptions options = new VertxOptions();
-//	        options.setBlockedThreadCheckInterval(1000*60*60);
-//	        vertx = Vertx.vertx(options);
-//	        vertx.deployVerticle(MyFirstVerticle.class.getName(), context.asyncAssertSuccess());
-//	    }
 
 
 }

@@ -4,6 +4,7 @@
 package org.etagate.app;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -16,7 +17,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
@@ -27,6 +31,7 @@ import io.vertx.ext.web.client.WebClient;
  */
 public class App {
 	
+	public static final Logger log = LoggerFactory.getLogger(App.class);
 
 	public final WebClient webclient;
 	public String name;
@@ -40,9 +45,11 @@ public class App {
 	private NodeStragegy nodeStrategy  = null;
 
 	private DevModeSupport devmode=null;
-	
+	 
 	private int maxfail=-1; 
 	private long circuit_reset=-1;
+	
+	private String inside_address=null;
 
 	public App(WebClient webclient,String name){
 		this(webclient,name,null);
@@ -120,6 +127,22 @@ public class App {
 				
 	}
 	
+	public JsonObject retrieveOneNode(HttpServerRequest clientRequest){
+		Node n = this.getNode(clientRequest);
+		if(n==null)
+			return null;
+		return n.toJsonObject();
+	}
+	
+	public JsonArray retrieveNodes(){
+		List<Node> ns = this.nodeStrategy.nodes();
+		JsonArray arry = new JsonArray();
+		if(ns!=null && !ns.isEmpty())
+			ns.forEach(n->arry.add(n.toJsonObject()));
+		return arry;
+		
+	}
+	
 	
 	public Future<HttpResponse<Buffer>> doGet(String uri,JsonObject param){
 		
@@ -156,7 +179,8 @@ public class App {
 		Node node = this.getNode(clientRequest);
 		
 		Future<HttpResponse<Buffer>> fu = Future.future();
-		if(node == null){			
+		if(node == null){	
+			log.error("too much request for app.\r\n"+this.toString());
 			fu.fail(new java.util.concurrent.TimeoutException());
 			return fu;
 		}
@@ -186,6 +210,14 @@ public class App {
 
 	public void setCircuitReset(long circuit_reset) {
 		this.circuit_reset = circuit_reset;
+	}
+
+	public String getInside_address() {
+		return inside_address;
+	}
+
+	public void setInside_address(String inside_address) {
+		this.inside_address = inside_address;
 	}
 	
 	

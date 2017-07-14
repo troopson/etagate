@@ -20,13 +20,13 @@ public class GateUser extends AbstractUser {
 
 	private JsonObject principal = null;
 	
-	private transient String principalString=null;
+	private transient String encodedPrincipal=null;
 
 	public GateUser(JsonObject json) {
 
 		this.principal = json;
 		try {
-			this.principalString = new String(json.encode().getBytes("UTF-8"),"ISO8859-1");
+			this.encodedPrincipal = new String(json.encode().getBytes("UTF-8"),"ISO8859-1");
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
@@ -72,8 +72,8 @@ public class GateUser extends AbstractUser {
 		return principal;
 	}
 	
-	public String principalString(){
-		return this.principalString;
+	public String encodePrincipal(){
+		return this.encodedPrincipal;
 	}
 
 	public String getAttr(String key) {

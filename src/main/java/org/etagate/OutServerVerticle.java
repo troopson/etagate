@@ -12,6 +12,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -31,16 +32,16 @@ import io.vertx.ext.web.sstore.SessionStore;
 /**
  * @author 瞿建军 Email: troopson@163.com 2017年4月11日
  */
-public class GateVerticle extends AbstractVerticle {
+public class OutServerVerticle extends AbstractVerticle {
 
-	public static final Logger log = LoggerFactory.getLogger(GateVerticle.class);
+	public static final Logger log = LoggerFactory.getLogger(OutServerVerticle.class);
 
 	private AuthMgr authMgr;
 
 	private String webroot;
 
 	private String upload_dir;
-
+	
 	private Router router;
 	
 	private WebClient webclient;
@@ -58,15 +59,19 @@ public class GateVerticle extends AbstractVerticle {
 		HttpServerOptions options = this.configSSL(conf);		
 		
 		HttpServer server = vertx.createHttpServer(options);
-				
+		
+		String host = conf.getString("host","0.0.0.0");
 		int port = Integer.parseInt(conf.getString("port", "80"));
-
+		
+		
+		
 		// ============初始化======================
 
 		this.webroot = conf.getString("static.file.dir");
 		this.upload_dir = conf.getString("upload.dir");
 
-		this.createWebClient();
+		this.createWebClient(conf);
+
 		this.appContain = gsetting.getAppContain(vertx,this.webclient);
 		
 		
@@ -77,11 +82,11 @@ public class GateVerticle extends AbstractVerticle {
 		router = Router.router(this.vertx);		
 		this.initRoutes(conf,server,appContain,index_page);
 
-		server.listen(port, ar -> {
+		server.listen(port,host, ar -> {
 			if (ar.succeeded()) {
-				log.info("Server listen on " + port);
+				log.info("OutServer listen on " + port);
 			} else {
-				log.error("Failed to start!", ar.cause());
+				log.error("OutServer Failed to start!", ar.cause());
 			}
 		});		
 
@@ -145,18 +150,37 @@ public class GateVerticle extends AbstractVerticle {
 				
 			}
 		}
+		
+		router.route().failureHandler(rc->{
+			
+			HttpServerResponse response = rc.response();
+			
+			if(response.ended())
+				return;
+			
+			int statusCode = rc.statusCode() == -1 ? 500 : rc.statusCode();
+
+            log.error("Error,status code: {}. ",statusCode);
+            response.setStatusCode(statusCode).end("status code:"+statusCode);
+		});
 
 	}
 
 	// =================================================
 
-	private void createWebClient(){
+	private void createWebClient(JsonObject conf){
+		
+		String app_maxWaitQueueSize =  conf.getString("app.maxWaitQueueSize","600");
+		String app_maxPoolSize = conf.getString("app.maxPoolSize","10");
+		
+		log.info("upstream connection pool size:{}, max wait queue size: {}", app_maxPoolSize,app_maxWaitQueueSize);
 		WebClientOptions op = new WebClientOptions();
-//		op.setKeepAlive(true);
-		op.setIdleTimeout(2);
-		op.setConnectTimeout(500);
-		op.setSsl(false);
-		op.setLogActivity(true);
+		op.setMaxWaitQueueSize(Integer.parseInt(app_maxWaitQueueSize))		
+		  .setIdleTimeout(2)
+		  .setConnectTimeout(500)
+		  .setSsl(false)
+		  .setMaxPoolSize(Integer.parseInt(app_maxPoolSize))
+		  .setLogActivity(true);
 		this.webclient = WebClient.create(vertx,op);
 	}
 

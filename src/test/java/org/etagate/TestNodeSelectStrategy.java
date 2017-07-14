@@ -1,13 +1,15 @@
 package org.etagate;
 
 import org.etagate.app.App;
+import org.etagate.app.node.Node;
+import org.etagate.app.node.RoundNodeStrategy;
 import org.etagate.app.node.WeightNodeStrategy;
 import org.junit.Test;
 
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 
-public class TestWeightStrategy {
+public class TestNodeSelectStrategy {
 
 	
 	@Test
@@ -38,6 +40,32 @@ public class TestWeightStrategy {
 		for(int i=0; i<100 ;i++){
 //			Node n = w.getNode(null);
 //			System.out.println(n);
+			System.out.println(w.getNode(null).toString());
+		}
+		
+		
+	}
+	
+	
+	@Test
+	public void testRoundStrategy() {
+		Vertx vertx = Vertx.vertx();
+		WebClient http = WebClient.create(vertx);
+		App a = new App(http,"test");
+		RoundNodeStrategy w = new RoundNodeStrategy();
+		Node n1 = a.createDevNode("10.10.10.1",80,1);
+		Node n2 = a.createDevNode("10.10.10.1",80,1);
+		Node n3 = a.createDevNode("10.10.10.1",80,1);
+		Node n4 = a.createDevNode("10.10.10.1",80,1);
+		Node n5 = a.createDevNode("10.10.10.1",80,1);
+		w.addNode(n1);
+		w.addNode(n2);
+		w.addNode(n3);
+		w.addNode(n4);
+		w.addNode(n5);
+		
+		
+		for(int i=0; i<100 ;i++){
 			System.out.println(w.getNode(null).toString());
 		}
 		

@@ -14,4 +14,6 @@ public class Globe {
 	 */
 	public static final String GATE_PRINCIPAL = "gate_principal";
 	
+	public static final String GATE_ADDRESS = "gate_address";
+	
 }
