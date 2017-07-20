@@ -13,7 +13,9 @@ import org.etagate.app.node.NodeStragegy;
 import org.etagate.app.node.RoundNodeStrategy;
 import org.etagate.helper.S;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
@@ -33,10 +35,11 @@ public class App {
 	
 	public static final Logger log = LoggerFactory.getLogger(App.class);
 
+	public final Vertx vertx;
 	public final WebClient webclient;
 	public String name;
 	public boolean cut_appName=true;
-	public long timeout=1000;
+	public int timeout=30000;
 	
 	private boolean dev=false;
 
@@ -51,12 +54,13 @@ public class App {
 	
 	private String inside_address=null;
 
-	public App(WebClient webclient,String name){
-		this(webclient,name,null);
+	public App(Vertx vertx,WebClient webclient,String name){
+		this(vertx,webclient,name,null);
 	}
 	
-	public App(WebClient webclient,String name,NodeStragegy s){
+	public App(Vertx vertx,WebClient webclient,String name,NodeStragegy s){
 		this.name=name;
+		this.vertx=vertx;
 		this.webclient=webclient;
 		if(s==null)
 			this.nodeStrategy = new RoundNodeStrategy();
@@ -90,7 +94,7 @@ public class App {
 		return this.routePath;
 	}
 	
-	public void setTimeout(long timeout){
+	public void setTimeout(int timeout){
 		this.timeout=timeout;
 	}
 	
@@ -175,20 +179,19 @@ public class App {
 	}
 	
 	
-	public Future<HttpResponse<Buffer>> takeRequest(RoutingContext rc, HttpServerRequest clientRequest,String uri){
+	public void takeRequest(RoutingContext rc, HttpServerRequest clientRequest,String uri, Handler<AsyncResult<HttpResponse<Buffer>>> h){
 		Node node = this.getNode(clientRequest);
 		
-		Future<HttpResponse<Buffer>> fu = Future.future();
 		if(node == null){	
-			log.error("too much request for app.\r\n"+this.toString());
-			fu.fail(new java.util.concurrent.TimeoutException());
-			return fu;
-		}
+			log.error("refuse request ,too much request for app.");
 			
-		node.dispatchRequest(rc, clientRequest, uri)
-		    .setHandler(fu.completer());
-		
-		return fu;
+			h.handle(Future.failedFuture(new java.util.concurrent.TimeoutException()));
+		}else{
+			
+			node.dispatchRequest(rc, clientRequest, uri)
+			    .setHandler(h);			
+			
+		}
 	}
 
 

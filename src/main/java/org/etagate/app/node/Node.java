@@ -18,7 +18,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
@@ -38,9 +37,7 @@ import io.vertx.ext.web.client.HttpResponse;
 public class Node {
 	
 	public static final Logger log = LoggerFactory.getLogger(Node.class);
-	
-	public static int REQUEST_QUEUE_MIN = 5;
-	
+		
 	private CircuitBreaker breaker;
 	
 	public final String host;
@@ -54,8 +51,8 @@ public class Node {
 	private int continueFailTimes=0;
 	private boolean gtMaxFail=false;
 		
-	private boolean paused=false;
-	private int taskInProcessing=0;
+//	private boolean paused=false;
+//	private int taskInProcessing=0;
 	
 		
 	public Node(App app,String host, int port, int weight){
@@ -93,8 +90,8 @@ public class Node {
 		if(this.breaker==null){		
 			if(this.gtMaxFail)
 				return false;
-			if(this.paused && taskInProcessing>=REQUEST_QUEUE_MIN)
-				return false;
+//			if(this.paused && taskInProcessing>0)
+//				return false;
 			
 			return true;
 		}else if(this.breaker.state()==CircuitBreakerState.OPEN)
@@ -119,9 +116,9 @@ public class Node {
 	@Override
 	public String toString(){
 		return host+":"+port+"("+this.weight+")"
-				+"  paused:"+this.paused
+//				+"  paused:"+this.paused
 				+"  failed times:"+continueFailTimes
-				+"  tasks queue:"+taskInProcessing
+//				+"  tasks queue:"+taskInProcessing
 				+"  gtMaxFail:"+this.gtMaxFail;
 	}
 	
@@ -139,7 +136,8 @@ public class Node {
 	//==================================================
 	public void get(String uri, JsonObject param, Handler<AsyncResult<HttpResponse<Buffer>>> h) {
 
-		HttpRequest<Buffer> req = app.webclient.get(this.port,this.host, uri).timeout(app.timeout);
+		HttpRequest<Buffer> req = app.webclient.get(this.port,this.host, uri)
+				.timeout(app.timeout);
 		if(param!=null){
 			param.forEach(entry -> {
 				req.addQueryParam(entry.getKey(), "" + entry.getValue());
@@ -147,7 +145,7 @@ public class Node {
 		}
 
 		Handler<AsyncResult<HttpResponse<Buffer>>> callback = this.wrap(req,HttpMethod.GET,uri, h);
-		taskInProcessing=taskInProcessing+1;
+//		taskInProcessing=taskInProcessing+1;
 		if(this.breaker!=null){
 			breaker.<HttpResponse<Buffer>>execute(f->{
 				req.send(f);
@@ -161,9 +159,10 @@ public class Node {
 	public Future<HttpResponse<Buffer>> dispatchRequest(RoutingContext rc,HttpServerRequest clientRequest,String uri){
 		HttpMethod method = clientRequest.method();
 		
-		HttpRequest<Buffer> appRequest = app.webclient.request(method, uri).ssl(false).timeout(app.timeout)
+		HttpRequest<Buffer> appRequest = app.webclient.request(method, uri).ssl(false)
+				.timeout(app.timeout)
 				.port(this.port).host(this.host);
-		
+				
 		
 		MultiMap cheads = clientRequest.headers();		
 		MultiMap heads = appRequest.headers();
@@ -191,7 +190,7 @@ public class Node {
 			}
 		}
 //		log.info("add request new task size:"+reqeustQueue.size());
-		taskInProcessing=taskInProcessing+1;
+//		taskInProcessing=taskInProcessing+1;
 		Future<HttpResponse<Buffer>> fu = Future.future();
 		
 		Handler<AsyncResult<HttpResponse<Buffer>>> h = this.wrap(appRequest,method,uri, fu.completer());
@@ -241,11 +240,12 @@ public class Node {
 
 	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(HttpRequest<Buffer> req,HttpMethod method,String uri,Handler<AsyncResult<HttpResponse<Buffer>>> h){
 		return res->{
-			taskInProcessing=taskInProcessing-1;
+			
+//			taskInProcessing=taskInProcessing-1;
 //			log.info("do remove, new size:"+reqeustQueue.size());
 			if(res.succeeded()){
-				if(this.paused)
-					this.paused = false;
+//				if(this.paused)
+//					this.paused = false;
 				
 				continueFailTimes=0;
 				
@@ -256,16 +256,18 @@ public class Node {
 			}else{
 				Throwable t = res.cause();
 				//如果是被动关闭的，不当做网络情况处理
-				if(t instanceof VertxException){
-					log.warn("Connect was closed. {}  url: {} " ,this.toString(), uri);
-				}else{				
-					this.paused = true;
-					if( t instanceof java.util.concurrent.TimeoutException 
-					|| t instanceof  io.vertx.core.http.ConnectionPoolTooBusyException ){
+				if( t instanceof io.vertx.core.http.ConnectionPoolTooBusyException){
+//					this.paused = true;
+					log.warn("Too Busy Exception. {}  url: {} " ,this.toString(), uri);
+				}else{	
+//					if(this.paused && this.taskInProcessing==0)
+//						this.paused=false;
+					
+					if( t instanceof java.util.concurrent.TimeoutException  ){
 						log.warn("Timeout: {} url: {}", this.toString() , uri);
 						
 					}else{
-						
+//						
 						continueFailTimes = continueFailTimes+1;
 						int maxFail = app.getMaxfail();
 						if(maxFail>0 && continueFailTimes > maxFail)

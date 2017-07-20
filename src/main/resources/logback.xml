@@ -24,7 +24,7 @@
   </appender> 
 
   <logger name="org.etagate" level="INFO" />
-  <logger name="io.vertx" level="INFO" />
+  <logger name="io.vertx" level="DEBUG" />
   <logger name="io.netty" level="WARN" />
 
   <root level="ERROR">

@@ -171,10 +171,10 @@ public class GateSetting {
 		NodeStragegy ns = createNodeStrategy(appNode);
 		DevModeSupport devmode = new DevModeSupport();
 		
-		App a = new App(webclient,name,ns);
+		App a = new App(vertx,webclient,name,ns);
 		a.setCutAppName(cutname);
 		if (S.isNotBlank(timeout))
-			a.setTimeout(Long.parseLong(timeout));
+			a.setTimeout(Integer.parseInt(timeout));
 		if("true".equals(dev))
 			a.setDevmode(devmode);
 		if(S.isNotBlank(circuit_maxfail))

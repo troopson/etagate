@@ -56,12 +56,13 @@ public class OutServerVerticle extends AbstractVerticle {
 
 		JsonObject conf = vertx.getOrCreateContext().config();
 		
-		HttpServerOptions options = this.configSSL(conf);		
-		
+		HttpServerOptions options = this.configSSL(conf);	
+		options.setAcceptBacklog(S.getInt(conf, "server.backlogsize", 128));
+		options.setIdleTimeout(1);
 		HttpServer server = vertx.createHttpServer(options);
 		
 		String host = conf.getString("host","0.0.0.0");
-		int port = Integer.parseInt(conf.getString("port", "80"));
+		int port = S.getInt(conf,"port", 80);
 		
 		
 		
@@ -108,7 +109,6 @@ public class OutServerVerticle extends AbstractVerticle {
 			StaticHandler sta = StaticHandler.create(webroot);
 			router.route().handler(sta);
 		}
-		
 		
 		
 		server.requestHandler(router::accept);
@@ -170,16 +170,21 @@ public class OutServerVerticle extends AbstractVerticle {
 
 	private void createWebClient(JsonObject conf){
 		
-		String app_maxWaitQueueSize =  conf.getString("app.maxWaitQueueSize","600");
-		String app_maxPoolSize = conf.getString("app.maxPoolSize","10");
+		int app_maxWaitQueueSize =  S.getInt(conf,"app.maxWaitQueueSize",100);
+		int app_maxPoolSize = S.getInt(conf,"app.maxPoolSize",50);
+		int connectTimeout = S.getInt(conf,"app.connect.timeout",1000);
+		int idleTimeout = S.getInt(conf,"app.idle.timeout",2);
 		
 		log.info("upstream connection pool size:{}, max wait queue size: {}", app_maxPoolSize,app_maxWaitQueueSize);
 		WebClientOptions op = new WebClientOptions();
-		op.setMaxWaitQueueSize(Integer.parseInt(app_maxWaitQueueSize))		
-		  .setIdleTimeout(2)
-		  .setConnectTimeout(500)
+		op.setMaxWaitQueueSize(app_maxWaitQueueSize)		
+		  .setIdleTimeout(idleTimeout)
+		  .setKeepAlive(true)
+		  .setPipelining(true)
+		  .setPipeliningLimit(5)
+		  .setConnectTimeout(connectTimeout)
 		  .setSsl(false)
-		  .setMaxPoolSize(Integer.parseInt(app_maxPoolSize))
+		  .setMaxPoolSize(app_maxPoolSize)
 		  .setLogActivity(true);
 		this.webclient = WebClient.create(vertx,op);
 	}

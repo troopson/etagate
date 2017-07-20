@@ -9,7 +9,6 @@ import org.etagate.app.App;
 import org.etagate.helper.HttpStatus;
 import org.etagate.helper.S;
 
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -43,22 +42,22 @@ public class RequestHandler implements Handler<RoutingContext> {
 		
 		uri = appObj.offsetUrl(uri);
 		
-		Future<HttpResponse<Buffer>> fu = appObj.takeRequest(rc, clientRequest, uri);
-		fu.setHandler(ar->{
-		    	HttpServerResponse clientResponse = rc.response();
-		    	if (ar.succeeded()) {					
-					this.handle(clientRequest, clientResponse, ar.result());					
-				} else {
-					
-					if(ar.cause() instanceof TimeoutException)
-						clientResponse.setStatusCode(HttpStatus.Request_Timeout);
-					else
-						clientResponse.setStatusCode(HttpStatus.Service_Unavailable);
-					
-					ar.cause().printStackTrace();					
-				}		    	
-		    	clientResponse.end();				
-		    });
+		appObj.takeRequest(rc, clientRequest, uri, 
+				ar->{
+			    	HttpServerResponse clientResponse = rc.response();
+			    	if (ar.succeeded()) {					
+						this.handle(clientRequest, clientResponse, ar.result());					
+					} else {
+						
+						if(ar.cause() instanceof TimeoutException)
+							clientResponse.setStatusCode(HttpStatus.Request_Timeout);
+						else
+							clientResponse.setStatusCode(HttpStatus.Service_Unavailable);
+						
+//						ar.cause().printStackTrace();					
+					}		    	
+			    	clientResponse.end();				
+		        });
 
 	}
 	

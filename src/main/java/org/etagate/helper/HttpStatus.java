@@ -23,7 +23,9 @@ public class HttpStatus {
 
 	public static final int  Internal_Server_Error = 500; 
 	
-	public static final int  Service_Unavailable = 503; 	
+	public static final int  Service_Unavailable = 503; 
+	
+	public static final int  PROXY_ERROR = 502; 	
 
 	public static final int  OK = 200; 
 	

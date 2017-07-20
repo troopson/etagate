@@ -14,7 +14,7 @@
     <file>${USER_HOME}/myApp.log</file>
 
     <encoder>
-      <pattern>%d{MMdd HH:mm:ss} [%thread] %level %logger{10} [%file:%line] %msg%n</pattern>
+      <pattern>%d{MMdd HH:mm:ss} [%thread] %level %logger{36} [%file:%line] %msg%n</pattern>
     </encoder>
   </appender>
   
@@ -28,7 +28,7 @@
       <totalSizeCap>3GB</totalSizeCap>
     </rollingPolicy>
     <encoder>
-      <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+      <pattern>%d{MMdd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
     </encoder>
   </appender> 
 
@@ -37,6 +37,7 @@
 
   <root level="OFF">
     <appender-ref ref="STDOUT" />
+    <appender-ref ref="RollFILE" />
   </root>
 
 </configuration>

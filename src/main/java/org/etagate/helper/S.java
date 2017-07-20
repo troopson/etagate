@@ -35,6 +35,13 @@ public class S {
 			return false;
 	}
 	
+	public static int getInt(JsonObject j,String key, int defaultV){
+		String s = j.getString(key);
+		if(isBlank(s))
+			return defaultV;
+		return Integer.parseInt(s);
+	}
+	
 	
 	@SuppressWarnings("rawtypes")
 	public static JsonArray toJsonArray(Map row, String[] fields){

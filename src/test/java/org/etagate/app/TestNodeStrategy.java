@@ -15,7 +15,7 @@ public class TestNodeStrategy {
 	public void testRoundNodeStrategy() {
 		Vertx vertx = Vertx.vertx();
 		WebClient http = WebClient.create(vertx);
-		App a =new App(http,"test");		
+		App a =new App(vertx,http,"test");		
 		RoundNodeStrategy r = new RoundNodeStrategy();
 		
 		r.addNode(new Node(a,"1.1.1.1", 80, 0));
@@ -36,7 +36,7 @@ public class TestNodeStrategy {
 	public void testWeightNodeStrategy() {
 		Vertx vertx = Vertx.vertx();
 		WebClient http = WebClient.create(vertx);
-		App a =new App(http,"test");		
+		App a =new App(vertx,http,"test");		
 		WeightNodeStrategy r = new WeightNodeStrategy();
 		
 		r.addNode(new Node(a,"1.1.1.1", 80, 1));

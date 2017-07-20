@@ -15,7 +15,7 @@ public class TestCircuitBreaker {
 	public static void main(String[] args) throws InterruptedException {
 		Vertx vertx = Vertx.vertx();
 		WebClient http = WebClient.create(vertx);
-		App a =new App(http,"test");		
+		App a =new App(vertx,http,"test");		
 		
 		
 		
