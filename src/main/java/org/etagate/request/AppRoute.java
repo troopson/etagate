@@ -23,8 +23,7 @@ public class AppRoute {
 		//1. 是否要加auth router
 						
 		//给每个app加上一个默认的匹配路径，app名作为第一级路径名称
-		appInfo.foreach((k,json)->{			
-			
+		appInfo.foreach((k,json)->{		
 			App appobj = appInfo.getAppInfo(k);
 			if(appobj==null)
 				return;
@@ -38,7 +37,7 @@ public class AppRoute {
 				return;
 			routepath.forEach( s ->{
 				addRoute(router,appobj,s);
-			});			
+			});
 			
 		});			
 	
@@ -52,7 +51,7 @@ public class AppRoute {
 		if(S.isBlank(urlpatten))
 			return;		
 		
-		//System.out.println("build route "+ urlpatten+"  "+appName+"   "+appobj.toString());
+//		System.out.println("build route "+ urlpatten+"   "+appobj.toString());
 		
 		RequestHandler appHandler = new RequestHandler(appobj);
 		

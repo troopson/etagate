@@ -2,16 +2,31 @@
 <gate>
 
    <property name="port">8088</property>
-   <property name="session">false</property>
-   <property name="app.maxPoolSize">5</property>
-   <property name="app.maxWaitQueueSize">10</property>
+   <property name="static.file.dir">data/html</property> 
+   <property name="upload.dir">data/upload</property>
+   <property name="index.page">/xtgl/login</property>
+
+   <property name="app.maxPoolSize">50</property>
+   <property name="app.maxWaitQueueSize">100</property>
    <property name="server.backlogsize">50</property>
+   
+   <auth app="xtgl" loginpage="/xtgl/login" authentication="/xtgl/weblogin" authorisation="/xtgl/checkpermission" mainpage= "/xtgl/index" successfield="no">
+      <exclude start="/xtgl/login,/xtgl/logout" />      
+   </auth>
 
 
-   <app name="auth" timeout="5000">
-      <node host="172.21.9.21" port="8081"/>
-      <node host="172.21.9.21" port="8082"/>
+   <app name="waweb" dev="true" timeout="3000">
+      <node host="172.21.9.15" port="8080"/>
+   </app> 
+
+
+   <app name="companyas" dev="true" timeout="3000">
+      <node host="172.21.9.15" port="8081"/>
    </app>
 
+   <app name="xtgl" dev="true" timeout="3000">
+      <node host="172.21.9.15" port="8888"/>
+   </app>
 
+  
 </gate>

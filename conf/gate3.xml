@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<gate>
+
+   <property name="port">8088</property>
+   <property name="session">false</property>
+   <property name="app.maxPoolSize">5</property>
+   <property name="app.maxWaitQueueSize">10</property>
+   <property name="server.backlogsize">50</property>
+
+
+   <app name="auth" timeout="5000">
+      <node host="172.21.9.21" port="8081"/>
+      <node host="172.21.9.21" port="8082"/>
+   </app>
+
+
+</gate>

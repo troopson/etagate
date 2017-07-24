@@ -142,9 +142,20 @@ public class Node {
 			param.forEach(entry -> {
 				req.addQueryParam(entry.getKey(), "" + entry.getValue());
 			});
-		}
-
-		Handler<AsyncResult<HttpResponse<Buffer>>> callback = this.wrap(req,HttpMethod.GET,uri, h);
+		}		
+		
+		Handler<AsyncResult<HttpResponse<Buffer>>> callback =res->{
+			if(res.succeeded()){				
+				continueFailTimes=0;		
+				log.info("{}, {} http://{}:{}{}",app.name,HttpMethod.GET,this.host,this.port,uri);			
+				h.handle(Future.succeededFuture(res.result()));			
+			}else{
+				Throwable t = res.cause();
+				this.onException(t, uri);
+				h.handle(Future.failedFuture(t));				
+			}		
+		};
+		
 //		taskInProcessing=taskInProcessing+1;
 		if(this.breaker!=null){
 			breaker.<HttpResponse<Buffer>>execute(f->{
@@ -158,7 +169,6 @@ public class Node {
 	
 	public Future<HttpResponse<Buffer>> dispatchRequest(RoutingContext rc,HttpServerRequest clientRequest,String uri){
 		HttpMethod method = clientRequest.method();
-		
 		HttpRequest<Buffer> appRequest = app.webclient.request(method, uri).ssl(false)
 				.timeout(app.timeout)
 				.port(this.port).host(this.host);
@@ -189,11 +199,19 @@ public class Node {
 				appRequest.addQueryParam("_upload_files_", Json.encode(upfiles));	
 			}
 		}
-//		log.info("add request new task size:"+reqeustQueue.size());
-//		taskInProcessing=taskInProcessing+1;
-		Future<HttpResponse<Buffer>> fu = Future.future();
-		
-		Handler<AsyncResult<HttpResponse<Buffer>>> h = this.wrap(appRequest,method,uri, fu.completer());
+
+		Future<HttpResponse<Buffer>> fu = Future.future();		
+		Handler<AsyncResult<HttpResponse<Buffer>>> h = res->{
+			if(res.succeeded()){				
+				continueFailTimes=0;		
+				log.info("{}, {} http://{}:{}{}",app.name,method,this.host,this.port,uri);			
+				fu.complete(res.result());			
+			}else{
+				Throwable t = res.cause();
+				this.onException(t, uri);
+				fu.fail(t);				
+			}		
+		};
 		
 		MultiMap attribute = clientRequest.formAttributes();		
 		if(attribute!=null && method.equals(HttpMethod.POST)){
@@ -237,53 +255,25 @@ public class Node {
 		
 	}
 	
-
-	private Handler<AsyncResult<HttpResponse<Buffer>>> wrap(HttpRequest<Buffer> req,HttpMethod method,String uri,Handler<AsyncResult<HttpResponse<Buffer>>> h){
-		return res->{
-			
-//			taskInProcessing=taskInProcessing-1;
-//			log.info("do remove, new size:"+reqeustQueue.size());
-			if(res.succeeded()){
-//				if(this.paused)
-//					this.paused = false;
-				
-				continueFailTimes=0;
-				
-				h.handle(Future.succeededFuture(res.result()));
-				
-				log.info("{}, {} http://{}:{}{}",app.name,method,this.host,this.port,uri);
-				
+	
+	private void onException(Throwable t,  String uri){
+		if( t instanceof io.vertx.core.http.ConnectionPoolTooBusyException){
+//			this.paused = true;
+			log.warn("Too Busy Exception. {}  url: {} " ,this.toString(), uri);
+		}else{						
+			if( t instanceof java.util.concurrent.TimeoutException  ){
+				log.warn("Timeout: {} url: {}", this.toString() , uri);						
 			}else{
-				Throwable t = res.cause();
-				//如果是被动关闭的，不当做网络情况处理
-				if( t instanceof io.vertx.core.http.ConnectionPoolTooBusyException){
-//					this.paused = true;
-					log.warn("Too Busy Exception. {}  url: {} " ,this.toString(), uri);
-				}else{	
-//					if(this.paused && this.taskInProcessing==0)
-//						this.paused=false;
-					
-					if( t instanceof java.util.concurrent.TimeoutException  ){
-						log.warn("Timeout: {} url: {}", this.toString() , uri);
-						
-					}else{
-//						
-						continueFailTimes = continueFailTimes+1;
-						int maxFail = app.getMaxfail();
-						if(maxFail>0 && continueFailTimes > maxFail)
-							gtMaxFail=true;
-						
-						log.error("Connect Error: {}  url: {}",t, this.toString() , uri);
-						t.printStackTrace();
-					}	
-				}
-				h.handle(Future.failedFuture(t));				
-			}
-			
-		};			
+				continueFailTimes = continueFailTimes+1;
+				int maxFail = app.getMaxfail();
+				if(maxFail>0 && continueFailTimes > maxFail)
+					gtMaxFail=true;						
+				log.error("Connect Error: {}  url: {}",t, this.toString() , uri);
+				t.printStackTrace();
+			}	
+		}
 	}
-		
-		
+	
 	private JsonObject fileToJson(FileUpload fu){
 		JsonObject j =new JsonObject();
 		j.put("name",fu.name());

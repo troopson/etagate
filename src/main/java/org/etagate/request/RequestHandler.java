@@ -26,7 +26,6 @@ public class RequestHandler implements Handler<RoutingContext> {
 
 	public static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
-	
 	private final App appObj;
 
 	public RequestHandler(App appinfo) {
@@ -35,33 +34,32 @@ public class RequestHandler implements Handler<RoutingContext> {
 
 	@Override
 	public void handle(RoutingContext rc) {
-
 		HttpServerRequest clientRequest = rc.request();
-		
+
 		String uri = clientRequest.uri();
-		
+
 		uri = appObj.offsetUrl(uri);
-		
-		appObj.takeRequest(rc, clientRequest, uri, 
-				ar->{
-			    	HttpServerResponse clientResponse = rc.response();
-			    	if (ar.succeeded()) {					
-						this.handle(clientRequest, clientResponse, ar.result());					
-					} else {
-						
-						if(ar.cause() instanceof TimeoutException)
-							clientResponse.setStatusCode(HttpStatus.Request_Timeout);
-						else
-							clientResponse.setStatusCode(HttpStatus.Service_Unavailable);
-						
-//						ar.cause().printStackTrace();					
-					}		    	
-			    	clientResponse.end();				
-		        });
+
+		appObj.takeRequest(rc, clientRequest, uri, ar -> {				
+			
+			HttpServerResponse clientResponse = rc.response();
+			if (ar.succeeded()) {
+				this.handle(clientRequest, clientResponse, ar.result());
+			} else {
+
+				if (ar.cause() instanceof TimeoutException)
+					clientResponse.setStatusCode(HttpStatus.Request_Timeout);
+				else
+					clientResponse.setStatusCode(HttpStatus.Service_Unavailable);
+
+				// ar.cause().printStackTrace();
+			}
+			if (!clientResponse.ended())
+				clientResponse.end();
+		});
 
 	}
-	
-	
+
 	public static String HTTP_SCHEMAL_HOST_REG = "http[s]+://[^/]*/";
 
 	public void handle(HttpServerRequest clientRequest, HttpServerResponse clientResponse,
@@ -69,13 +67,14 @@ public class RequestHandler implements Handler<RoutingContext> {
 
 		int statusCode = appResponse.statusCode();
 		clientResponse.setStatusCode(statusCode);
-		clientResponse.setStatusMessage(appResponse.statusMessage());
+//		clientResponse.setStatusMessage(appResponse.statusMessage());
+//		System.out.println(appResponse.statusMessage());
 
 		MultiMap appHeaders = appResponse.headers();
 		appHeaders.forEach(entry -> {
 			String k = entry.getKey();
 			String v = entry.getValue();
-			// System.out.println("app Response:["+k+"]="+v);
+//			System.out.println("Header Response:[" + k + "]=" + v);
 			if ("Location".equalsIgnoreCase(k) && S.isNotBlank(v)) {
 				String schemal = clientRequest.scheme();
 				String host = clientRequest.host();
@@ -85,14 +84,11 @@ public class RequestHandler implements Handler<RoutingContext> {
 		});
 
 		clientResponse.setChunked(true);
-//		clientResponse.putHeader("Content-Length",""+appResponse.body().length());
 		
-//		String s =appResponse.bodyAsString();
-//		System.out.println(s);
 		Buffer buff = appResponse.bodyAsBuffer();
-		if(buff!=null && buff.length()>0)
+		if (buff != null && buff.length() > 0)
 			clientResponse.write(buff);
-		
+
 	}
 
 }

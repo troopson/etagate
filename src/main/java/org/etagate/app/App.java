@@ -188,8 +188,12 @@ public class App {
 			h.handle(Future.failedFuture(new java.util.concurrent.TimeoutException()));
 		}else{
 			
-			node.dispatchRequest(rc, clientRequest, uri)
-			    .setHandler(h);			
+			vertx.runOnContext(r->{
+				node.dispatchRequest(rc, clientRequest, uri)
+			    .setHandler(h);		
+			});
+			
+				
 			
 		}
 	}

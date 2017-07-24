@@ -58,7 +58,7 @@ public class OutServerVerticle extends AbstractVerticle {
 		
 		HttpServerOptions options = this.configSSL(conf);	
 		options.setAcceptBacklog(S.getInt(conf, "server.backlogsize", 128));
-		options.setIdleTimeout(1);
+		options.setIdleTimeout(10);
 		HttpServer server = vertx.createHttpServer(options);
 		
 		String host = conf.getString("host","0.0.0.0");
@@ -173,15 +173,16 @@ public class OutServerVerticle extends AbstractVerticle {
 		int app_maxWaitQueueSize =  S.getInt(conf,"app.maxWaitQueueSize",100);
 		int app_maxPoolSize = S.getInt(conf,"app.maxPoolSize",50);
 		int connectTimeout = S.getInt(conf,"app.connect.timeout",1000);
-		int idleTimeout = S.getInt(conf,"app.idle.timeout",2);
+		int idleTimeout = S.getInt(conf,"app.idle.timeout",15);
 		
 		log.info("upstream connection pool size:{}, max wait queue size: {}", app_maxPoolSize,app_maxWaitQueueSize);
 		WebClientOptions op = new WebClientOptions();
 		op.setMaxWaitQueueSize(app_maxWaitQueueSize)		
 		  .setIdleTimeout(idleTimeout)
 		  .setKeepAlive(true)
-		  .setPipelining(true)
-		  .setPipeliningLimit(5)
+		  .setTcpKeepAlive(true)
+//		  .setPipelining(true)
+//		  .setPipeliningLimit(5)
 		  .setConnectTimeout(connectTimeout)
 		  .setSsl(false)
 		  .setMaxPoolSize(app_maxPoolSize)
