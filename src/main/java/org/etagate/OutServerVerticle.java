@@ -172,8 +172,8 @@ public class OutServerVerticle extends AbstractVerticle {
 		
 		int app_maxWaitQueueSize =  S.getInt(conf,"app.maxWaitQueueSize",100);
 		int app_maxPoolSize = S.getInt(conf,"app.maxPoolSize",50);
-		int connectTimeout = S.getInt(conf,"app.connect.timeout",1000);
-		int idleTimeout = S.getInt(conf,"app.idle.timeout",15);
+		int connectTimeout = S.getInt(conf,"app.connect.timeout",5000);
+		int idleTimeout = S.getInt(conf,"app.idle.timeout",60);
 		
 		log.info("upstream connection pool size:{}, max wait queue size: {}", app_maxPoolSize,app_maxWaitQueueSize);
 		WebClientOptions op = new WebClientOptions();
