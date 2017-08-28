@@ -16,4 +16,6 @@ public class Globe {
 	
 	public static final String GATE_ADDRESS = "gate_address";
 	
+	public static final String APP_DEPEND="apps";
+	
 }

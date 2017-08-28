@@ -37,9 +37,10 @@ public class App {
 
 	public final Vertx vertx;
 	public final WebClient webclient;
+	public final AppContain appcontain;
 	public String name;
 	public boolean cut_appName=true;
-	public int timeout=30000;
+	public int timeout=60000;
 	
 	private boolean dev=false;
 
@@ -52,16 +53,19 @@ public class App {
 	private int maxfail=-1; 
 	private long circuit_reset=-1;
 	
+	private String[] depends;
+	
 	private String inside_address=null;
 
 	public App(Vertx vertx,WebClient webclient,String name){
-		this(vertx,webclient,name,null);
+		this(vertx,webclient,name,null,null);
 	}
 	
-	public App(Vertx vertx,WebClient webclient,String name,NodeStragegy s){
+	public App(Vertx vertx,WebClient webclient,String name,NodeStragegy s,AppContain appcontain){
 		this.name=name;
 		this.vertx=vertx;
 		this.webclient=webclient;
+		this.appcontain = appcontain;
 		if(s==null)
 			this.nodeStrategy = new RoundNodeStrategy();
 		else
@@ -102,10 +106,37 @@ public class App {
 		this.cut_appName=iscut;
 	}
 	
+	public void setDepends(String depends){
+		if(S.isNotBlank(depends))
+			this.depends = depends.split(",");
+	}
+	
 	
 	public void setDevmode(DevModeSupport devmode) {
 		this.devmode = devmode;
 		this.dev = true;
+	}
+	
+	public String getDependAppAddr(final HttpServerRequest request){
+		if(this.depends==null || this.appcontain ==null )
+			return null;
+		
+		StringBuilder sb = new StringBuilder();
+		
+		for(String d : this.depends){
+			App a = this.appcontain.getAppInfo(d);
+			if(a!=null){
+				String v = a.retrievOneNodeHostPort(request);
+				if(S.isNotBlank(v)){
+					if(sb.length()>0)
+						sb.append(",");
+					sb.append(d).append("=").append(v);
+				}
+			}
+		}
+		
+		return sb.toString();		
+		
 	}
 
 	public String offsetUrl(String uri){
@@ -136,6 +167,13 @@ public class App {
 		if(n==null)
 			return null;
 		return n.toJsonObject();
+	}
+	
+	public String retrievOneNodeHostPort(HttpServerRequest clientRequest){
+		Node n = this.getNode(clientRequest);
+		if(n==null)
+			return null;
+		return n.hostport();
 	}
 	
 	public JsonArray retrieveNodes(){

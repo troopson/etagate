@@ -58,7 +58,7 @@ public class OutServerVerticle extends AbstractVerticle {
 		
 		HttpServerOptions options = this.configSSL(conf);	
 		options.setAcceptBacklog(S.getInt(conf, "server.backlogsize", 128));
-		options.setIdleTimeout(20);
+		options.setIdleTimeout(60);
 		HttpServer server = vertx.createHttpServer(options);
 		
 		String host = conf.getString("host","0.0.0.0");

@@ -9,6 +9,7 @@ import java.util.Set;
 import org.etagate.app.App;
 import org.etagate.auth.GateUser;
 import org.etagate.conf.Globe;
+import org.etagate.helper.S;
 
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
@@ -180,6 +181,11 @@ public class Node {
 //		heads.remove("Host");
 //		heads.add("Host", this.host + ":" + this.port);
 		
+		String depdstr = app.getDependAppAddr(clientRequest);
+		if(S.isNotBlank(depdstr))
+			heads.add(Globe.APP_DEPEND, depdstr);
+		
+//		System.out.println("==================="+depdstr);
 		heads.remove(Globe.GATE_PRINCIPAL);
 //		System.out.println("==============="+user.principal().encode());
 		GateUser user = (GateUser)rc.user();
@@ -255,6 +261,9 @@ public class Node {
 		
 	}
 	
+	public String hostport(){
+		return this.host+":"+this.port;
+	}
 	
 	private void onException(Throwable t,  String uri){
 		if( t instanceof io.vertx.core.http.ConnectionPoolTooBusyException){

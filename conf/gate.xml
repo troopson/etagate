@@ -15,16 +15,16 @@
    </auth>
 
 
-   <app name="waweb" dev="true" timeout="3000">
+   <app name="waweb" dev="true" timeout="30000" depend="xtgl,companyas">
       <node host="172.21.9.15" port="8080"/>
    </app> 
 
 
-   <app name="companyas" dev="true" timeout="3000">
+   <app name="companyas" dev="true" timeout="30000">
       <node host="172.21.9.15" port="8081"/>
    </app>
 
-   <app name="xtgl" dev="true" timeout="3000">
+   <app name="xtgl" dev="true" timeout="30000">
       <node host="172.21.9.15" port="8888"/>
    </app>
 

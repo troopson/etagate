@@ -159,6 +159,7 @@ public class GateSetting {
 		String dev = appNode.attributeValue("dev");
 		String circuit_maxfail = appNode.attributeValue("maxfail");
 		String circuit_reset = appNode.attributeValue("resetsecond");
+		String depend = appNode.attributeValue("depend");
 
 //		System.out.println(circuit_maxfail+"  "+circuit_reset);
 		
@@ -171,7 +172,7 @@ public class GateSetting {
 		NodeStragegy ns = createNodeStrategy(appNode);
 		DevModeSupport devmode = new DevModeSupport();
 		
-		App a = new App(vertx,webclient,name,ns);
+		App a = new App(vertx,webclient,name,ns,appinfo);
 		a.setCutAppName(cutname);
 		if (S.isNotBlank(timeout))
 			a.setTimeout(Integer.parseInt(timeout));
@@ -183,6 +184,8 @@ public class GateSetting {
 			a.setCircuitReset(Long.parseLong(circuit_reset)*1000);
 		if(this.inside_address!=null)
 			a.setInside_address(this.inside_address);
+		if(S.isNotBlank(depend))
+			a.setDepends(depend);
 
 		if (nodes != null && !nodes.isEmpty()) {
 			nodes.forEach(n -> {
